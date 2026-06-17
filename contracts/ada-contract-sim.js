@@ -1,25 +1,38 @@
 var AdaContract = {
+  lastContract: null,
+  lastResult: null,
+
+  _check: function(name, allowed, reason) {
+    this.lastContract = name;
+    this.lastResult = allowed ? 'ALLOWED' : 'DENIED';
+    return { allowed: allowed, contract: name, reason: reason || '', mode: 'ADA_SIM' };
+  },
+
   canBoot: function() {
-    return { allowed: true, contract: 'Can_Boot' };
+    return this._check('Can_Boot', true);
   },
 
   canRunDebate: function() {
-    return { allowed: true, contract: 'Can_Run_Debate' };
+    return this._check('Can_Run_Debate', true);
   },
 
   canWriteAudit: function() {
-    return { allowed: true, contract: 'Can_Write_Audit' };
+    return this._check('Can_Write_Audit', true);
   },
 
   canClearVault: function(userConfirmed) {
-    return {
-      allowed: Boolean(userConfirmed),
-      contract: 'Can_Clear_Vault',
-      reason: userConfirmed ? 'User confirmed' : 'User confirmation required'
-    };
+    return this._check('Can_Clear_Vault', Boolean(userConfirmed), userConfirmed ? 'User confirmed' : 'User confirmation required');
   },
 
   canExportSnapshot: function() {
-    return { allowed: true, contract: 'Can_Export_Snapshot' };
+    return this._check('Can_Export_Snapshot', true);
+  },
+
+  canInvokeLisp: function() {
+    return this._check('Can_Invoke_Lisp', true, 'Safe Lisp form');
+  },
+
+  canInvokeRuntime: function() {
+    return this._check('Can_Invoke_Runtime', true, 'Runtime access granted');
   }
 };

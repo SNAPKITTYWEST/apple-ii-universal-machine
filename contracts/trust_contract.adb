@@ -29,4 +29,14 @@ package body Trust_Contract is
       return Allowed;
    end Can_Export_Snapshot;
 
+   function Can_Invoke_Lisp return Trust_Status is
+   begin
+      return Allowed;
+   end Can_Invoke_Lisp;
+
+   function Can_Invoke_Runtime return Trust_Status is
+   begin
+      return Allowed;
+   end Can_Invoke_Runtime;
+
 end Trust_Contract;

@@ -34,6 +34,7 @@
         <div class="status-line"><span class="sl-label">INTERACTION:</span><span class="sl-value l-green">ENABLED</span></div>
         <div class="status-line"><span class="sl-label">ADA CONTRACT:</span><span class="sl-value l-cyan">SIMULATED</span></div>
         <div class="status-line"><span class="sl-label">RUNTIME:</span><span class="sl-value l-yellow" id="runtime-mode">HOLY_SIM</span></div>
+        <div class="status-line"><span class="sl-label">SWIFTWASM:</span><span class="sl-value l-yellow">FALLBACK_JS</span></div>
         <div class="status-line"><span class="sl-label">VAULT EVENTS:</span><span class="sl-value" id="vault-count">0</span></div>
         <div class="status-line"><span class="sl-label">SEALS:</span><span class="sl-value" id="seal-count">0</span></div>
       </div>
@@ -56,6 +57,7 @@
   <div id="runtime-bar">
     <span class="rl">RUNTIME:</span>
     <button class="runtime-btn active" data-rt="holy-sim">HOLY_SIM</button>
+    <button class="runtime-btn" data-rt="swift-wasm">SWIFTWASM: FALLBACK_JS</button>
     <button class="runtime-btn disabled" data-rt="wasm">WASM: coming soon</button>
     <button class="runtime-btn disabled" data-rt="webllm">WEBLLM: coming soon</button>
     <button class="runtime-btn disabled" data-rt="ollama">OLLAMA: coming soon</button>
@@ -68,8 +70,18 @@
 <script src="./ascii-registry.js"></script>
 <script src="./trust-deed.js"></script>
 <script src="./contracts/ada-contract-sim.js"></script>
+<script src="./contracts/contract-registry.js"></script>
+<script src="./lisp/sexpr-parser.js"></script>
+<script src="./lisp/lisp-machine.js"></script>
+<script src="./lisp/lisp-patterns.js"></script>
+<script src="./lisp/fontana-ffi-sim.js"></script>
+<script src="./assembly/register-sim.js"></script>
+<script src="./assembly/opcode-viewer.js"></script>
+<script src="./encoding/reverse-unicode.js"></script>
+<script src="./encoding/glyph-seal.js"></script>
 <script src="./runtime/holy-sim.js"></script>
 <script src="./runtime/runtime-registry.js"></script>
+<script src="./runtime/swift-wasm-adapter.js"></script>
 <script src="./app.js"></script>
 </body>
 </html>

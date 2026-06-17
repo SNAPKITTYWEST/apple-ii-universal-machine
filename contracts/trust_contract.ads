@@ -7,5 +7,7 @@ package Trust_Contract is
    function Can_Write_Audit return Trust_Status;
    function Can_Clear_Vault(User_Confirmed : Boolean) return Trust_Status;
    function Can_Export_Snapshot return Trust_Status;
+   function Can_Invoke_Lisp return Trust_Status;
+   function Can_Invoke_Runtime return Trust_Status;
 
 end Trust_Contract;

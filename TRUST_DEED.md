@@ -13,13 +13,17 @@ This application is governed by the following trust rules:
 7. **Simulation honesty** — All agents are browser-simulated, not real Ring 0 HolyC.
 8. **Ada contracts enforced** — Trust gates implemented via JS simulator matching real Ada source.
 
-## Ada Contract
+## Ada + Lisp Rules
 
-The Ada contract source files (`trust_contract.ads`, `trust_contract.adb`) define the trust rules in real Ada. The JS simulator (`ada-contract-sim.js`) enforces these same rules in the browser.
+- No Lisp expression may execute unless the Ada Contract Layer allows it.
+- No Lisp command may call arbitrary JavaScript eval.
+- No simulated FFI may mutate Woz Vault except through approved audit APIs.
+- All Lisp and Fontana reactions must be sealed.
 
 ## Runtime Modes
 
 - **HOLY_SIM** (active) — Browser-safe simulation
+- **SwiftWasm** (experimental) — Swift runtime with JS fallback
 - **WASM** (coming soon) — WebAssembly runtime
 - **WebLLM** (coming soon) — Browser LLM inference
 - **Ollama** (coming soon) — Desktop bridge to local models
