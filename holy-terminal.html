@@ -58,6 +58,13 @@ body { display: flex; flex-direction: column; }
   <button class="btn" data-cmd="listtwins">TWINS</button>
   <button class="btn" data-cmd="listmodes">MODES</button>
   <button class="btn" data-cmd="currentmode">MODE?</button>
+  <button class="btn" data-cmd="ollamastatus">OLLAMA</button>
+  <button class="btn" data-cmd="listmodels">MODELS</button>
+  <button class="btn" data-cmd="connectollama">CONNECT</button>
+  <button class="btn" data-cmd="vacuumhelp">VACUUM</button>
+  <button class="btn" data-cmd="compileenvelope">ENVELOPE</button>
+  <button class="btn" data-cmd="screenshotterminal">SCREENSHOT</button>
+  <button class="btn" data-cmd="exportproof">PROOF</button>
   <button class="btn danger" data-cmd="clear-vault">CLEAR VAULT</button>
 </div>
 <div id="status-bar">
@@ -78,8 +85,14 @@ body { display: flex; flex-direction: column; }
   <span>PROLOG: SIMULATED</span>
   <span>BF: SANDBOXED</span>
   <span>MODE: <span id="mode-label">APPLE</span></span>
+  <span>OLLAMA: <span id="ollama-status">OFFLINE</span></span>
+  <span>MODEL: <span id="current-model">none</span></span>
   <span>AGENTS: <span id="agent-count">0</span></span>
   <span>TWINS: <span id="twin-count">0</span></span>
+  <span>LAST SEAL: <span id="last-seal">none</span></span>
+  <span>VACUUM: SIMULATED</span>
+  <span>ENVELOPE: <span id="envelope-status">PENDING</span></span>
+  <span>SCREENSHOT: READY</span>
 </div>
 <div id="honest-banner">CURRENT MODE: HOLY_SIM — This is a browser-safe simulation, not real Ring 0 HolyC execution.</div>
 <script src="./seal.js"></script>
@@ -131,6 +144,19 @@ body { display: flex; flex-direction: column; }
 <script src="./modes/holy-mode.js"></script>
 <script src="./modes/vm-mode.js"></script>
 <script src="./modes/agent-mode.js"></script>
+<script src="./ollama/ollama-adapter.js"></script>
+<script src="./ollama/model-registry.js"></script>
+<script src="./ollama/ollama-commands.js"></script>
+<script src="./export/screenshot-export.js"></script>
+<script src="./export/snapshot-share.js"></script>
+<script src="./vacuum/vacuum-ingest.js"></script>
+<script src="./vacuum/semantic-extractor.js"></script>
+<script src="./vacuum/schema-mapper.js"></script>
+<script src="./vacuum/vacuum-commands.js"></script>
+<script src="./envelope/envelope-builder.js"></script>
+<script src="./envelope/envelope-verifier.js"></script>
+<script src="./envelope/bytecode-envelope.js"></script>
+<script src="./envelope/envelope-commands.js"></script>
 <script>
 (function() {
   var term = document.getElementById('terminal');
@@ -163,6 +189,14 @@ body { display: flex; flex-direction: column; }
       var tc = document.getElementById('twin-count');
       if (ac && typeof AgentRegistry !== 'undefined') ac.textContent = AgentRegistry.count();
       if (tc && typeof TwinRegistry !== 'undefined') tc.textContent = TwinRegistry.count();
+      var os = document.getElementById('ollama-status');
+      if (os && typeof OllamaAdapter !== 'undefined') os.textContent = OllamaAdapter.isOnline ? 'ONLINE ✓' : 'OFFLINE';
+      var cm = document.getElementById('current-model');
+      if (cm && typeof OllamaAdapter !== 'undefined') cm.textContent = OllamaAdapter.currentModel || 'none';
+      var ls = document.getElementById('last-seal');
+      if (ls) ls.textContent = sealTotal > 0 ? '#' + sealTotal : 'none';
+      var ev = document.getElementById('envelope-status');
+      if (ev && typeof EnvelopeBuilder !== 'undefined') ev.textContent = EnvelopeBuilder.lastEnvelope && EnvelopeBuilder.lastEnvelope.verified ? 'VERIFIED ✓' : (EnvelopeBuilder.lastEnvelope ? 'BUILT' : 'PENDING');
     } catch {}
   }
 
@@ -252,6 +286,28 @@ body { display: flex; flex-direction: column; }
         '║  ListModes;          — list all modes                             ║\n' +
         '║  SwitchMode "name";  — switch to mode                             ║\n' +
         '║  CurrentMode;        — show current mode                          ║\n' +
+        '║                                                                  ║\n' +
+        '║  OLLAMA AGENT-IN-A-BOX                                          ║\n' +
+        '║  OllamaStatus;       — check Ollama connection                   ║\n' +
+        '║  ListModels;         — list available models                      ║\n' +
+        '║  ConnectOllama;      — probe localhost:11434                      ║\n' +
+        '║  SpawnAgent "N";     — create local AI agent                      ║\n' +
+        '║  DesignAgent "N" key="v"; — configure agent                       ║\n' +
+        '║  RunAgent "N" "prompt"; — run agent (Ollama or simulated)          ║\n' +
+        '║                                                                  ║\n' +
+        '║  VACUUM PIPELINE                                                ║\n' +
+        '║  VacuumHelp;         — vacuum commands                            ║\n' +
+        '║  VacuumIngest "text"; — ingest raw text                           ║\n' +
+        '║  ExtractMeaning "text"; — extract entities & topics               ║\n' +
+        '║  ToLisp "text";      — convert text to Lisp                       ║\n' +
+        '║  CompileEnvelope "(expr)"; — compile to envelope                  ║\n' +
+        '║  VerifyEnvelope;     — verify last envelope                       ║\n' +
+        '║  RunEnvelope;        — run last verified envelope                  ║\n' +
+        '║                                                                  ║\n' +
+        '║  EXPORT                                                          ║\n' +
+        '║  ScreenshotTerminal; — capture terminal as image                  ║\n' +
+        '║  ExportProof;        — export full proof package                   ║\n' +
+        '║  ExportEnvelope;     — export envelope as JSON                    ║\n' +
         '╚══════════════════════════════════════════════════════════════════════╝',
         'l-cyan'
       );
@@ -715,6 +771,37 @@ body { display: flex; flex-direction: column; }
       ModeRegistry.init();
       var cur = ModeRegistry.getCurrent();
       prints('CURRENT MODE: ' + cur.name.toUpperCase() + ' (' + cur.config.label + ')\nTHEME: ' + cur.config.theme + '\nPROMPT: ' + cur.config.prompt, 'l-green');
+    },
+
+    // --- Ollama Agent-in-a-Box ---
+    ollamastatus: async function() { var r = await OllamaCommands.status(); prints(r.output, r.type === 'error' ? 'l-red' : 'l-cyan'); refreshCounts(); },
+    listmodels: function() { var r = OllamaCommands.listModels(); prints(r.output, r.type === 'error' ? 'l-red' : 'l-cyan'); },
+    connectollama: async function() { var r = await OllamaCommands.connect(); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    designagent: async function(args) { var r = await OllamaCommands.designAgent(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+
+    // --- Vacuum Pipeline ---
+    vacuumhelp: function() { prints(VacuumCommands.help(), 'l-cyan'); },
+    vacuumingest: function(args) { var r = VacuumCommands.ingest(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    extractmeaning: function(args) { var r = VacuumCommands.extract(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    tolisp: function(args) { var r = VacuumCommands.toLisp(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+
+    // --- Envelope Pipeline ---
+    compileenvelope: async function(args) { var r = await EnvelopeCommands.compile(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    verifyenvelope: function() { var r = EnvelopeCommands.verify(); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    runenvelope: async function() { var r = await EnvelopeCommands.run(); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    exportenvelope: function() { var r = EnvelopeCommands.export(); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); },
+
+    // --- Screenshot & Export ---
+    screenshotterminal: async function() {
+      var result = await ScreenshotExport.capture();
+      prints(ScreenshotExport.renderResult(result), 'l-cyan');
+      WozVault.writeAuditEvent({ type: 'SCREENSHOT', agent: 'USER', file: result.filename || 'error' });
+      doSeal({ type: 'SCREENSHOT_SEAL' }).then(function() { refreshCounts(); });
+    },
+    exportproof: async function() {
+      var r = await SnapshotShare.exportJSON();
+      prints(r.output, r.type === 'error' ? 'l-red' : 'l-green');
+      refreshCounts();
     }
   };
 
