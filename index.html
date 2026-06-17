@@ -11,7 +11,14 @@
 <pre id="boot-art"></pre>
 <div id="boot-status">INITIALIZING...</div>
 </div>
-<div id="app" style="display:none"></div>
+<div id="app" style="display:none">
+  <div id="term-header"></div>
+  <div id="term-output"></div>
+  <div id="term-input-row">
+    <span class="prompt">sunboot&gt; </span>
+    <input id="term-input" autofocus autocomplete="off" spellcheck="false" />
+  </div>
+</div>
 <script src="seal.js"></script>
 <script src="woz-vault.js"></script>
 <script src="ascii-registry.js"></script>
