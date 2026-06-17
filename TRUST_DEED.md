@@ -20,6 +20,15 @@ This application is governed by the following trust rules:
 - No simulated FFI may mutate Woz Vault except through approved audit APIs.
 - All Lisp and Fontana reactions must be sealed.
 
+## Heterogeneous VM Rules
+
+- No real machine code is executed. All opcodes are simulated artifacts.
+- Brainfuck runs in a sandbox: max 30000 cells, max 5000 steps.
+- Bytecode VM halts at 1000 steps.
+- Every VM command passes through Ada Contract + Prolog Gate before execution.
+- Every VM trace generates a SHA-256 seal.
+- Machine code viewer displays artifacts only — never executes them.
+
 ## Runtime Modes
 
 - **HOLY_SIM** (active) — Browser-safe simulation

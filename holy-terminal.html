@@ -51,6 +51,7 @@ body { display: flex; flex-direction: column; }
   <button class="btn" data-cmd="lisphelp">LISP</button>
   <button class="btn" data-cmd="registers">ASM</button>
   <button class="btn" data-cmd="glyphseal">GLYPH</button>
+  <button class="btn" data-cmd="vmtrace">VM</button>
   <button class="btn danger" data-cmd="clear-vault">CLEAR VAULT</button>
 </div>
 <div id="status-bar">
@@ -64,6 +65,9 @@ body { display: flex; flex-direction: column; }
   <span>FONTANA: SIMULATED</span>
   <span>ASSEMBLY: SIMULATED</span>
   <span>UNICODE: ONLINE</span>
+  <span>VM: ONLINE</span>
+  <span>PROLOG: SIMULATED</span>
+  <span>BF: SANDBOXED</span>
 </div>
 <div id="honest-banner">CURRENT MODE: HOLY_SIM — This is a browser-safe simulation, not real Ring 0 HolyC execution.</div>
 <script src="./seal.js"></script>
@@ -83,6 +87,12 @@ body { display: flex; flex-direction: column; }
 <script src="./runtime/holy-sim.js"></script>
 <script src="./runtime/runtime-registry.js"></script>
 <script src="./runtime/swift-wasm-adapter.js"></script>
+<script src="./vm/prolog-sim.js"></script>
+<script src="./vm/macro-expander.js"></script>
+<script src="./vm/bytecode-vm.js"></script>
+<script src="./vm/brainfuck-tape.js"></script>
+<script src="./vm/machine-viewer.js"></script>
+<script src="./vm/heterogeneous-vm.js"></script>
 <script>
 (function() {
   var term = document.getElementById('terminal');
@@ -162,6 +172,14 @@ body { display: flex; flex-direction: column; }
         '║  ReverseUnicode "x"; — reverse a string                            ║\n' +
         '║  GlyphSeal "x";     — create glyph seal with hash                 ║\n' +
         '║  RestoreUnicode "x"; — restore mirrored text                       ║\n' +
+        '║                                                                  ║\n' +
+        '║  HETEROGENEOUS VM                                                ║\n' +
+        '║  PrologAsk query;     — Prolog gate query                         ║\n' +
+        '║  MacroExpand intent;  — expand intent to steps                    ║\n' +
+        '║  BytecodeRun ops;     — run bytecode program                      ║\n' +
+        '║  BrainfuckRun code;   — run Brainfuck in sandbox                  ║\n' +
+        '║  MachineView intent;  — view machine artifact                     ║\n' +
+        '║  VMTrace intent;      — full VM trace of intent                   ║\n' +
         '╚══════════════════════════════════════════════════════════════════════╝',
         'l-cyan'
       );
@@ -454,6 +472,86 @@ body { display: flex; flex-direction: column; }
       prints('RESTORED:  ' + restored, 'l-cyan');
       WozVault.writeAuditEvent({ type: 'RESTORE_UNICODE', agent: 'USER', input: text, restored: restored });
       refreshCounts();
+    },
+
+    // --- Heterogeneous VM Commands ---
+    prologask: function(args) {
+      var query = args ? args.join(' ').replace(/\.$/g, '').trim() : 'allowed(boot_agent)';
+      var c = ContractRegistry.check('lisp');
+      if (!c.allowed) { prints('ADA CONTRACT: DENIED', 'l-red'); return; }
+      var result = PrologSim.ask(query);
+      prints(PrologSim.renderResult(result), 'l-cyan');
+      WozVault.writeAuditEvent({ type: 'PROLOG_ASK', agent: 'PROLOG_SIM', query: query, result: result.result });
+      doSeal({ type: 'PROLOG_SEAL', query: query, result: result.result }).then(function(s) {
+        prints('SEAL: ' + s.hash.slice(0, 24) + '...', 'l-cyan');
+        refreshCounts();
+      });
+    },
+
+    macroexpand: function(args) {
+      var intent = args ? args.join(' ').replace(/[()"]/g, '').trim() : 'boot_agent';
+      var c = ContractRegistry.check('lisp');
+      if (!c.allowed) { prints('ADA CONTRACT: DENIED', 'l-red'); return; }
+      var result = MacroExpander.expand(intent);
+      prints(MacroExpander.render(result), 'l-cyan');
+      WozVault.writeAuditEvent({ type: 'MACRO_EXPAND', agent: 'MACRO', intent: intent, steps: result.steps.length });
+      doSeal({ type: 'MACRO_SEAL', intent: intent }).then(function(s) {
+        prints('SEAL: ' + s.hash.slice(0, 24) + '...', 'l-cyan');
+        refreshCounts();
+      });
+    },
+
+    byterunerun: function(args) { CMDS.bytecoderun(args); },
+    bytecoderun: function(args) {
+      var program = args ? args.join(' ').replace(/[()"]/g, '').trim() : 'PUSH 1 PUSH 2 ADD PRINT';
+      var c = ContractRegistry.check('lisp');
+      if (!c.allowed) { prints('ADA CONTRACT: DENIED', 'l-red'); return; }
+      var result = BytecodeVM.run(program);
+      prints(BytecodeVM.render(result), 'l-cyan');
+      WozVault.writeAuditEvent({ type: 'BYTECODE_RUN', agent: 'BYTECODE_VM', program: program, steps: result.steps });
+      doSeal({ type: 'BYTECODE_SEAL', program: program }).then(function(s) {
+        prints('SEAL: ' + s.hash.slice(0, 24) + '...', 'l-cyan');
+        refreshCounts();
+      });
+    },
+
+    brainfuckrun: function(args) {
+      var code = args ? args.join('').replace(/[()"]/g, '').trim() : '++>+++<[->+<]>.';
+      var c = ContractRegistry.check('lisp');
+      if (!c.allowed) { prints('ADA CONTRACT: DENIED', 'l-red'); return; }
+      var result = BrainfuckTape.run(code);
+      prints(BrainfuckTape.render(result), 'l-cyan');
+      WozVault.writeAuditEvent({ type: 'BRAINFUCK_RUN', agent: 'BF_TAPE', code: code, steps: result.steps || 0 });
+      doSeal({ type: 'BRAINFUCK_SEAL', code: code }).then(function(s) {
+        prints('SEAL: ' + s.hash.slice(0, 24) + '...', 'l-cyan');
+        refreshCounts();
+      });
+    },
+
+    machineview: function(args) {
+      var intent = args ? args.join(' ').replace(/[()"]/g, '').trim() : 'boot_agent';
+      var c = ContractRegistry.check('lisp');
+      if (!c.allowed) { prints('ADA CONTRACT: DENIED', 'l-red'); return; }
+      var result = MachineViewer.view(intent);
+      prints(MachineViewer.render(result), 'l-cyan');
+      WozVault.writeAuditEvent({ type: 'MACHINE_VIEW', agent: 'MACHINE', intent: intent });
+      doSeal({ type: 'MACHINE_SEAL', intent: intent }).then(function(s) {
+        prints('SEAL: ' + s.hash.slice(0, 24) + '...', 'l-cyan');
+        refreshCounts();
+      });
+    },
+
+    vmtrace: function(args) {
+      var intent = args ? args.join(' ').replace(/[()"]/g, '').trim() : 'boot_agent';
+      var c = ContractRegistry.check('lisp');
+      if (!c.allowed) { prints('ADA CONTRACT: DENIED', 'l-red'); return; }
+      var trace = HeterogeneousVM.traceIntent(intent);
+      prints(HeterogeneousVM.render(trace), 'l-cyan');
+      WozVault.writeAuditEvent({ type: 'VM_TRACE', agent: 'HETERO_VM', intent: intent, prolog: trace.prolog.result });
+      doSeal({ type: 'VM_TRACE_SEAL', intent: intent, prolog: trace.prolog.result }).then(function(s) {
+        prints('SEAL: ' + s.hash.slice(0, 24) + '...', 'l-cyan');
+        refreshCounts();
+      });
     }
   };
 
