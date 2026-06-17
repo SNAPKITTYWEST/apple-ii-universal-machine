@@ -1,0 +1,29 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; color: #0f0; font-family: 'Courier New', monospace; min-height: 100vh; }
+#boot-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; padding: 20px; }
+#boot-art { color: #0f0; font-size: 12px; line-height: 1.4; text-align: center; }
+#boot-status { color: #0f0; font-size: 14px; margin-top: 20px; animation: blink 1s infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.page { max-width: 800px; margin: 0 auto; padding: 32px 20px; }
+.page h1 { color: #0f0; font-size: 18px; letter-spacing: 2px; margin-bottom: 8px; }
+.page h2 { color: #0f0; font-size: 14px; margin-bottom: 16px; }
+.page p { color: #888; font-size: 12px; margin-bottom: 12px; line-height: 1.6; }
+.btn { background: #111; border: 1px solid #0f0; color: #0f0; padding: 10px 20px; font-family: 'Courier New', monospace; font-size: 12px; cursor: pointer; margin: 4px; }
+.btn:hover { background: #0f0; color: #000; }
+.btn.danger { border-color: #f44; color: #f44; }
+.btn.danger:hover { background: #f44; color: #000; }
+.input-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.input-row input { flex: 1; background: #111; border: 1px solid #333; color: #0f0; padding: 10px; font-family: 'Courier New', monospace; font-size: 12px; outline: none; }
+.input-row input:focus { border-color: #0f0; }
+.log { border: 1px solid #1a1a1a; padding: 12px; max-height: 400px; overflow-y: auto; font-size: 11px; line-height: 1.6; margin-bottom: 16px; background: #050505; }
+.log .entry { margin-bottom: 4px; }
+.log .time { color: #333; }
+.log .event { color: #0f0; }
+.log .seal { color: #0ff; }
+.log .error { color: #f44; }
+.pre { white-space: pre; color: #0f0; font-size: 11px; line-height: 1.4; }
+.back { display: inline-block; margin-top: 16px; color: #555; font-size: 11px; text-decoration: none; cursor: pointer; }
+.back:hover { color: #0f0; }
+.nav { border-bottom: 1px solid #1a1a1a; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+.nav a { color: #555; text-decoration: none; font-size: 11px; margin-left: 12px; }
+.nav a:hover, .nav a.active { color: #0f0; }

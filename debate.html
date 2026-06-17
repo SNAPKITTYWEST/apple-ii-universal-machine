@@ -1,0 +1,93 @@
+<div class="page">
+  <div class="nav">
+    <span style="color:#0f0;font-size:12px;letter-spacing:2px">DEBATE ARENA</span>
+    <div>
+      <a href="?" style="color:#555;text-decoration:none;font-size:11px;margin-left:12px">holy</a>
+    </div>
+  </div>
+  <div style="padding:20px">
+    <pre class="pre" id="debate-ascii"></pre>
+    <h2 style="color:#0f0;font-size:14px;margin:16px 0 8px">LOCAL AGENT SIMULATION</h2>
+    <p style="color:#888;font-size:11px;margin-bottom:16px">ENKI proposes. SENTINEL audits. Everything sealed to Woz Vault. No remote calls.</p>
+    <div class="input-row">
+      <input id="topic-input" placeholder="Enter a topic (e.g. consciousness, covenant, free will)" />
+      <button class="btn" id="run-btn">RUN</button>
+    </div>
+    <div class="log" id="debate-log"></div>
+    <div id="result-area"></div>
+  </div>
+</div>
+<script>
+document.getElementById('debate-ascii').textContent = AsciiRegistry.renderAscii('debate');
+
+var logEl = document.getElementById('debate-log');
+var resultArea = document.getElementById('result-area');
+
+function addLog(text, cls) {
+  var div = document.createElement('div');
+  div.className = 'entry ' + (cls || '');
+  div.textContent = '[' + new Date().toLocaleTimeString() + '] ' + text;
+  logEl.appendChild(div);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+var ENKI_RESPONSES = {
+  consciousness: { topic: 'consciousness', enki: 'Consciousness may be the interface between quantum indeterminacy and moral agency. Neither physics nor theology alone can explain it.', sentinel: 'ANALOGY detected. Consciousness remains unexplained by both domains. Marked as HYPOTHESIS.', trust: 0.6 },
+  covenant: { topic: 'covenant', enki: 'Covenant is a binding relational structure. Entanglement is a physical non-local connection. They share structure but differ in meaning.', sentinel: 'STRUCTURAL parallel identified. But covenant requires intention, entanglement does not. Marked as ANALOGY.', trust: 0.7 },
+  'free will': { topic: 'free will', enki: 'Free will requires both indeterminacy (quantum randomness) and intention (theological moral agency). Neither alone suffices.', sentinel: 'HYPOTHESIS supported. Both domains contribute. No overclaiming detected.', trust: 0.8 },
+  metatron: { topic: 'metatron', enki: 'Metatron represents the boundary test: can a human consciousness transcend its origin? Enoch says yes, theology says no.', sentinel: 'TENSION identified. Two traditions conflict. Marked as UNRESOLVED.', trust: 0.5 },
+  soul: { topic: 'soul', enki: 'The soul (nephesh) is the breath of God oriented toward its Creator. Physics cannot model this orientation.', sentinel: 'DOCTRINE label applied. Requires faith backing, not physics proof.', trust: 0.6 }
+};
+
+var DEFAULT_RESPONSE = { topic: 'unknown', enki: 'This topic requires cross-domain analysis. No existing tension map found. Proceeding with generic exploration.', sentinel: 'INSUFFICIENT DATA. Topic not in local corpus. Marked as UNVERIFIED.', trust: 0.3 };
+
+document.getElementById('run-btn').addEventListener('click', runDebate);
+document.getElementById('topic-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') runDebate(); });
+
+async function runDebate() {
+  var topic = document.getElementById('topic-input').value.trim().toLowerCase();
+  if (!topic) return;
+
+  logEl.innerHTML = '';
+  resultArea.innerHTML = '';
+
+  addLog('TOPIC: ' + topic, 'event');
+  WozVault.writeAuditEvent({ type: 'DEBATE_START', agent: 'ARENA', topic: topic });
+
+  await sleep(300);
+  addLog('ENKI → exploring tensions...', 'event');
+
+  await sleep(500);
+  var data = ENKI_RESPONSES[topic] || DEFAULT_RESPONSE;
+
+  addLog('ENKI: ' + data.enki, 'event');
+  WozVault.writeAuditEvent({ type: 'ENKI_RESPONSE', agent: 'ENKI', topic: data.topic, response: data.enki });
+
+  await sleep(400);
+  addLog('SENTINEL → auditing...', 'event');
+
+  await sleep(500);
+  addLog('SENTINEL: ' + data.sentinel, 'event');
+  WozVault.writeAuditEvent({ type: 'SENTINEL_AUDIT', agent: 'SENTINEL', topic: data.topic, audit: data.sentinel, trust: data.trust });
+
+  var seal = await Seal.createSeal({ type: 'DEBATE_COMPLETE', topic: data.topic, trust: data.trust });
+  WozVault.writeAuditEvent({ type: 'DEBATE_SEALED', agent: 'ARENA', seal: seal.hash, topic: data.topic });
+
+  addLog('SEAL: ' + seal.hash.slice(0, 24) + '...', 'seal');
+  addLog('DEBATE COMPLETE — logged to Woz Vault', 'event');
+
+  resultArea.innerHTML =
+    '<pre class="pre">' +
+    '╔══════════════════════════════════════════╗\n' +
+    '║  DEBATE RESULT                           ║\n' +
+    '╠══════════════════════════════════════════╣\n' +
+    '║  TOPIC:  ' + data.topic.padEnd(31) + '║\n' +
+    '║  TRUST:  ' + AsciiRegistry.trustDensityArt(data.trust).padEnd(31) + '║\n' +
+    '║  SEAL:   ' + seal.hash.slice(0, 16).padEnd(31) + '║\n' +
+    '║  STATUS: SEALED ✓                        ║\n' +
+    '╚══════════════════════════════════════════╝' +
+    '</pre>';
+}
+
+function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+</script>
