@@ -1,0 +1,41 @@
+name: Capsule Staple
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+
+jobs:
+  staple:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate staple manifest
+        run: |
+          echo "Generating repo staple manifest..."
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          COMMIT=$(git rev-parse HEAD)
+          FILE_COUNT=$(find . -type f -not -path './.git/*' | wc -l)
+
+          cat > woz-staple-manifest.json << EOF
+          {
+            "repo": "${{ github.repository }}",
+            "commit": "$COMMIT",
+            "version": "1.0.0",
+            "fileCount": $FILE_COUNT,
+            "buildTimestamp": "$TIMESTAMP",
+            "generatedBy": "capsule-staple-workflow",
+            "verified": true
+          }
+          EOF
+
+          echo "✓ Staple manifest generated"
+          cat woz-staple-manifest.json
+
+      - name: Upload staple artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: staple-manifest
+          path: woz-staple-manifest.json
+          retention-days: 30

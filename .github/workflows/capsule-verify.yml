@@ -1,0 +1,64 @@
+name: Capsule Verify
+
+on:
+  push:
+    paths:
+      - 'capsules/**'
+      - 'cards/**'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify capsule files exist
+        run: |
+          echo "Checking capsule files..."
+          for f in capsules/capsule-registry.js capsules/capsule-builder.js capsules/capsule-card.js capsules/capsule-runner.js capsules/capsule-commands.js; do
+            if [ -f "$f" ]; then
+              echo "✓ $f"
+            else
+              echo "✗ MISSING: $f"
+              exit 1
+            fi
+          done
+
+      - name: Verify card templates exist
+        run: |
+          echo "Checking card templates..."
+          for f in cards/AGENT_CARD_TEMPLATE.md cards/TWIN_CARD_TEMPLATE.md cards/MODEL_CARD_TEMPLATE.md; do
+            if [ -f "$f" ]; then
+              echo "✓ $f"
+            else
+              echo "✗ MISSING: $f"
+              exit 1
+            fi
+          done
+
+      - name: Check required metadata in capsule files
+        run: |
+          echo "Checking capsule metadata..."
+          grep -q "name" capsules/capsule-builder.js
+          grep -q "type" capsules/capsule-builder.js
+          grep -q "model" capsules/capsule-builder.js
+          grep -q "arch" capsules/capsule-builder.js
+          grep -q "limitations" capsules/capsule-builder.js
+          grep -q "intendedUse" capsules/capsule-builder.js
+          echo "✓ All required metadata fields present"
+
+      - name: Verify seal generation
+        run: |
+          grep -q "Seal.createSeal" capsules/capsule-builder.js
+          grep -q "Seal.createSeal" capsules/capsule-runner.js
+          echo "✓ Seal generation present"
+
+      - name: Verify audit trail
+        run: |
+          grep -q "WozVault.writeAuditEvent" capsules/capsule-builder.js
+          grep -q "WozVault.writeAuditEvent" capsules/capsule-runner.js
+          echo "✓ Audit trail present"
+
+      - name: Summary
+        run: echo "Capsule verification PASSED ✓"
