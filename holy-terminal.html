@@ -93,6 +93,9 @@ body { display: flex; flex-direction: column; }
 <script src="./vm/brainfuck-tape.js"></script>
 <script src="./vm/machine-viewer.js"></script>
 <script src="./vm/heterogeneous-vm.js"></script>
+<script src="./lisp/fontana-decoder.js"></script>
+<script src="./lisp/lisp-expand.js"></script>
+<script src="./lisp/lisp-to-vm.js"></script>
 <script>
 (function() {
   var term = document.getElementById('terminal');
@@ -180,6 +183,11 @@ body { display: flex; flex-direction: column; }
         '║  BrainfuckRun code;   — run Brainfuck in sandbox                  ║\n' +
         '║  MachineView intent;  — view machine artifact                     ║\n' +
         '║  VMTrace intent;      — full VM trace of intent                   ║\n' +
+        '║                                                                  ║\n' +
+        '║  FONTANA → LISP → VM PIPELINE                                    ║\n' +
+        '║  FontanaDecode x;    — decode Fontana output to Lisp              ║\n' +
+        '║  LispExpand (expr);  — expand Lisp expression                     ║\n' +
+        '║  LispToVM (expr);    — compile Lisp to VM bytecode                ║\n' +
         '╚══════════════════════════════════════════════════════════════════════╝',
         'l-cyan'
       );
@@ -549,6 +557,46 @@ body { display: flex; flex-direction: column; }
       prints(HeterogeneousVM.render(trace), 'l-cyan');
       WozVault.writeAuditEvent({ type: 'VM_TRACE', agent: 'HETERO_VM', intent: intent, prolog: trace.prolog.result });
       doSeal({ type: 'VM_TRACE_SEAL', intent: intent, prolog: trace.prolog.result }).then(function(s) {
+        prints('SEAL: ' + s.hash.slice(0, 24) + '...', 'l-cyan');
+        refreshCounts();
+      });
+    },
+
+    // --- Fontana → Lisp → VM Pipeline ---
+    fontanadecode: function(args) {
+      var text = args ? args.join(' ').replace(/[()"]/g, '').trim() : 'agent trust audit';
+      var c = ContractRegistry.check('lisp');
+      if (!c.allowed) { prints('ADA CONTRACT: DENIED', 'l-red'); return; }
+      var result = FontanaDecoder.decode(text);
+      prints(FontanaDecoder.render(result), 'l-cyan');
+      WozVault.writeAuditEvent({ type: 'FONTANA_DECODE', agent: 'DECODER', input: text, lisp: result.lispExpr });
+      doSeal({ type: 'DECODE_SEAL', input: text, lisp: result.lispExpr }).then(function(s) {
+        prints('SEAL: ' + s.hash.slice(0, 24) + '...', 'l-cyan');
+        refreshCounts();
+      });
+    },
+
+    lispexpand: function(args) {
+      var expr = args ? args.join(' ').trim() : '(agent trust audit)';
+      var c = ContractRegistry.check('lisp');
+      if (!c.allowed) { prints('ADA CONTRACT: DENIED', 'l-red'); return; }
+      var result = LispExpand.expand(expr);
+      prints(LispExpand.render(result), 'l-cyan');
+      WozVault.writeAuditEvent({ type: 'LISP_EXPAND', agent: 'LISP_EXPAND', input: expr });
+      doSeal({ type: 'EXPAND_SEAL', input: expr }).then(function(s) {
+        prints('SEAL: ' + s.hash.slice(0, 24) + '...', 'l-cyan');
+        refreshCounts();
+      });
+    },
+
+    lisptovm: function(args) {
+      var expr = args ? args.join(' ').trim() : '(boot)';
+      var c = ContractRegistry.check('lisp');
+      if (!c.allowed) { prints('ADA CONTRACT: DENIED', 'l-red'); return; }
+      var result = LispToVM.convert(expr);
+      prints(LispToVM.render(result), 'l-cyan');
+      WozVault.writeAuditEvent({ type: 'LISP_TO_VM', agent: 'COMPILER', input: expr, op: result.op });
+      doSeal({ type: 'COMPILER_SEAL', input: expr, bytecode: result.bytecode }).then(function(s) {
         prints('SEAL: ' + s.hash.slice(0, 24) + '...', 'l-cyan');
         refreshCounts();
       });
