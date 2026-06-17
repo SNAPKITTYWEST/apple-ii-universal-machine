@@ -52,6 +52,12 @@ body { display: flex; flex-direction: column; }
   <button class="btn" data-cmd="registers">ASM</button>
   <button class="btn" data-cmd="glyphseal">GLYPH</button>
   <button class="btn" data-cmd="vmtrace">VM</button>
+  <button class="btn" data-cmd="spawnagent">SPAWN</button>
+  <button class="btn" data-cmd="listagents">AGENTS</button>
+  <button class="btn" data-cmd="createtwin">TWIN</button>
+  <button class="btn" data-cmd="listtwins">TWINS</button>
+  <button class="btn" data-cmd="listmodes">MODES</button>
+  <button class="btn" data-cmd="currentmode">MODE?</button>
   <button class="btn danger" data-cmd="clear-vault">CLEAR VAULT</button>
 </div>
 <div id="status-bar">
@@ -71,6 +77,9 @@ body { display: flex; flex-direction: column; }
   <span>VM: ONLINE</span>
   <span>PROLOG: SIMULATED</span>
   <span>BF: SANDBOXED</span>
+  <span>MODE: <span id="mode-label">APPLE</span></span>
+  <span>AGENTS: <span id="agent-count">0</span></span>
+  <span>TWINS: <span id="twin-count">0</span></span>
 </div>
 <div id="honest-banner">CURRENT MODE: HOLY_SIM — This is a browser-safe simulation, not real Ring 0 HolyC execution.</div>
 <script src="./seal.js"></script>
@@ -99,6 +108,29 @@ body { display: flex; flex-direction: column; }
 <script src="./lisp/fontana-decoder.js"></script>
 <script src="./lisp/lisp-expand.js"></script>
 <script src="./lisp/lisp-to-vm.js"></script>
+<script src="./runtime/runtime-registry.js"></script>
+<script src="./runtime/holy-sim.js"></script>
+<script src="./runtime/swift-wasm-adapter.js"></script>
+<script src="./runtime/webllm-adapter.js"></script>
+<script src="./runtime/ollama-adapter.js"></script>
+<script src="./runtime/wasm-adapter.js"></script>
+<script src="./agents/agent-registry.js"></script>
+<script src="./agents/agent-spawner.js"></script>
+<script src="./agents/agent-profile.js"></script>
+<script src="./agents/agent-runner.js"></script>
+<script src="./agents/agent-commands.js"></script>
+<script src="./twins/twin-registry.js"></script>
+<script src="./twins/twin-designer.js"></script>
+<script src="./twins/twin-profile.js"></script>
+<script src="./twins/twin-runner.js"></script>
+<script src="./twins/twin-commands.js"></script>
+<script src="./modes/mode-registry.js"></script>
+<script src="./modes/apple-mode.js"></script>
+<script src="./modes/linux-mode.js"></script>
+<script src="./modes/windows-mode.js"></script>
+<script src="./modes/holy-mode.js"></script>
+<script src="./modes/vm-mode.js"></script>
+<script src="./modes/agent-mode.js"></script>
 <script>
 (function() {
   var term = document.getElementById('terminal');
@@ -126,6 +158,12 @@ body { display: flex; flex-direction: column; }
     vaultCountEl.textContent = events.length;
     sealCountEl.textContent = sealTotal;
     headerCounts.textContent = 'VAULT: ' + events.length + ' · SEALS: ' + sealTotal;
+    try {
+      var ac = document.getElementById('agent-count');
+      var tc = document.getElementById('twin-count');
+      if (ac && typeof AgentRegistry !== 'undefined') ac.textContent = AgentRegistry.count();
+      if (tc && typeof TwinRegistry !== 'undefined') tc.textContent = TwinRegistry.count();
+    } catch {}
   }
 
   async function doSeal(payload) {
@@ -191,6 +229,29 @@ body { display: flex; flex-direction: column; }
         '║  FontanaDecode x;    — decode Fontana output to Lisp              ║\n' +
         '║  LispExpand (expr);  — expand Lisp expression                     ║\n' +
         '║  LispToVM (expr);    — compile Lisp to VM bytecode                ║\n' +
+        '║                                                                  ║\n' +
+        '║  AGENTS                                                          ║\n' +
+        '║  AgentHelp;          — agent commands                             ║\n' +
+        '║  SpawnAgent "N";     — spawn named agent                         ║\n' +
+        '║  SpawnAgent "N" role; — spawn with role                           ║\n' +
+        '║  ListAgents;         — list all agents                            ║\n' +
+        '║  RunAgent "N" "task"; — run agent on task                         ║\n' +
+        '║  InspectAgent "N";   — view agent profile                         ║\n' +
+        '║  DeleteAgent "N";    — remove agent                               ║\n' +
+        '║                                                                  ║\n' +
+        '║  DIGITAL TWINS                                                   ║\n' +
+        '║  TwinHelp;           — twin commands                              ║\n' +
+        '║  CreateTwin "N";     — create digital twin                       ║\n' +
+        '║  DesignTwin "N" key="v"; — design twin specs                     ║\n' +
+        '║  ListTwins;          — list all twins                             ║\n' +
+        '║  RunTwin "N" "task"; — run twin on task                           ║\n' +
+        '║  InspectTwin "N";    — view twin profile                          ║\n' +
+        '║  DeleteTwin "N";     — remove twin                                ║\n' +
+        '║                                                                  ║\n' +
+        '║  MODE SWITCHING                                                  ║\n' +
+        '║  ListModes;          — list all modes                             ║\n' +
+        '║  SwitchMode "name";  — switch to mode                             ║\n' +
+        '║  CurrentMode;        — show current mode                          ║\n' +
         '╚══════════════════════════════════════════════════════════════════════╝',
         'l-cyan'
       );
@@ -607,6 +668,53 @@ body { display: flex; flex-direction: column; }
         prints('SEAL: ' + s.hash.slice(0, 24) + '...', 'l-cyan');
         refreshCounts();
       });
+    },
+
+    // --- Agent Commands ---
+    agenthelp: function() { prints(AgentCommands.help(), 'l-cyan'); },
+    spawnagent: async function(args) { var r = await AgentCommands.spawn(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    listagents: function() { var r = AgentCommands.list(); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); },
+    runagent: async function(args) { var r = await AgentCommands.run(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    inspectagent: function(args) { var r = AgentCommands.inspect(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); },
+    deleteagent: function(args) { var r = AgentCommands.delete(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); },
+
+    // --- Twin Commands ---
+    twinhelp: function() { prints(TwinCommands.help(), 'l-cyan'); },
+    createtwin: async function(args) { var r = await TwinCommands.create(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    designtwin: async function(args) { var r = await TwinCommands.design(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    listtwins: function() { var r = TwinCommands.list(); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); },
+    runtwin: async function(args) { var r = await TwinCommands.run(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    inspecttwin: function(args) { var r = TwinCommands.inspect(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); },
+    deletetwin: function(args) { var r = TwinCommands.delete(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); },
+
+    // --- Mode Commands ---
+    listmodes: function() {
+      ModeRegistry.init();
+      var modes = ModeRegistry.listAll();
+      var lines = ['╔══════════════════════════════════════════════════════════╗', '║  MODES                                                   ║', '╠══════════════════════════════════════════════════════════╣'];
+      modes.forEach(function(m) {
+        var marker = m.active ? ' ◄ ACTIVE' : '';
+        lines.push('║  ' + m.name.padEnd(10) + ' │ ' + m.label.padEnd(14) + ' │ ' + m.theme.padEnd(16) + marker.padEnd(6) + '║');
+      });
+      lines.push('╚══════════════════════════════════════════════════════════╝');
+      prints(lines.join('\n'), 'l-cyan');
+    },
+    switchmode: function(args) {
+      var modeName = args ? args[0].toLowerCase() : '';
+      if (!modeName) { prints('Usage: SwitchMode "modename";', 'l-yellow'); return; }
+      ModeRegistry.init();
+      var ok = ModeRegistry.switchTo(modeName);
+      if (!ok) { prints('Unknown mode: ' + modeName, 'l-red'); return; }
+      var cfg = ModeRegistry.getCurrent();
+      document.getElementById('mode-label').textContent = cfg.config.label.toUpperCase();
+      prints('Switched to: ' + cfg.config.label, 'l-green');
+      WozVault.writeAuditEvent({ type: 'MODE_SWITCH', agent: 'USER', mode: modeName });
+      doSeal({ type: 'MODE_SEAL', mode: modeName }).then(function(s) { prints('SEAL: ' + s.hash.slice(0, 24), 'l-cyan'); refreshCounts(); });
+    },
+    currentmode: function() {
+      ModeRegistry.init();
+      var cur = ModeRegistry.getCurrent();
+      prints('CURRENT MODE: ' + cur.name.toUpperCase() + ' (' + cur.config.label + ')\nTHEME: ' + cur.config.theme + '\nPROMPT: ' + cur.config.prompt, 'l-green');
     }
   };
 

@@ -42,6 +42,12 @@
     var events = WozVault.readAuditLog();
     vaultCount.textContent = events.length;
     sealCount.textContent = sealTotal;
+    try {
+      var ac = document.getElementById('agent-count');
+      var tc = document.getElementById('twin-count');
+      if (ac && typeof AgentRegistry !== 'undefined') ac.textContent = AgentRegistry.count();
+      if (tc && typeof TwinRegistry !== 'undefined') tc.textContent = TwinRegistry.count();
+    } catch {}
     auditPanel.innerHTML = '';
     var show = events.slice(-15);
     for (var i = 0; i < show.length; i++) {
@@ -321,6 +327,55 @@
       prints(';; WOZ VAULT CLEARED ✓', 'l-yellow');
       refreshAudit();
       refreshVault();
+    },
+
+    // --- Agent Commands ---
+    'agenthelp': function() { prints(AgentCommands.help(), 'l-cyan'); },
+    'spawnagent': async function(args) { var r = await AgentCommands.spawn(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshAudit(); },
+    'listagents': function() { var r = AgentCommands.list(); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); },
+    'runagent': async function(args) { var r = await AgentCommands.run(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshAudit(); },
+    'inspectagent': function(args) { var r = AgentCommands.inspect(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); },
+    'deleteagent': function(args) { var r = AgentCommands.delete(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); },
+
+    // --- Twin Commands ---
+    'twinhelp': function() { prints(TwinCommands.help(), 'l-cyan'); },
+    'createtwin': async function(args) { var r = await TwinCommands.create(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshAudit(); },
+    'designtwin': async function(args) { var r = await TwinCommands.design(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshAudit(); },
+    'listtwins': function() { var r = TwinCommands.list(); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); },
+    'runtwin': async function(args) { var r = await TwinCommands.run(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshAudit(); },
+    'inspecttwin': function(args) { var r = TwinCommands.inspect(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); },
+    'deletetwin': function(args) { var r = TwinCommands.delete(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); },
+
+    // --- Mode Commands ---
+    'listmodes': function() {
+      ModeRegistry.init();
+      var modes = ModeRegistry.listAll();
+      var lines = ['╔══════════════════════════════════════════════════════════╗', '║  MODES                                                   ║', '╠══════════════════════════════════════════════════════════╣'];
+      modes.forEach(function(m) {
+        var marker = m.active ? ' ◄ ACTIVE' : '';
+        lines.push('║  ' + m.name.padEnd(10) + ' │ ' + m.label.padEnd(14) + ' │ ' + m.theme.padEnd(16) + marker.padEnd(6) + '║');
+      });
+      lines.push('╚══════════════════════════════════════════════════════════╝');
+      prints(lines.join('\n'), 'l-cyan');
+    },
+    'switchmode': function(args) {
+      var modeName = args ? args[0].toLowerCase() : '';
+      if (!modeName) { prints('Usage: switchmode modename', 'l-yellow'); return; }
+      ModeRegistry.init();
+      var ok = ModeRegistry.switchTo(modeName);
+      if (!ok) { prints('Unknown mode: ' + modeName, 'l-red'); return; }
+      var cfg = ModeRegistry.getCurrent();
+      document.getElementById('mode-label').textContent = cfg.config.label.toUpperCase();
+      var bannerMode = document.getElementById('banner-mode');
+      if (bannerMode) bannerMode.textContent = cfg.config.label.toUpperCase();
+      prints('Switched to: ' + cfg.config.label, 'l-green');
+      WozVault.writeAuditEvent({ type: 'MODE_SWITCH', agent: 'USER', mode: modeName });
+      doSeal({ type: 'MODE_SEAL', mode: modeName }).then(function(s) { prints('SEAL: ' + s.hash.slice(0, 24), 'l-cyan'); refreshAudit(); });
+    },
+    'currentmode': function() {
+      ModeRegistry.init();
+      var cur = ModeRegistry.getCurrent();
+      prints('CURRENT MODE: ' + cur.name.toUpperCase() + ' (' + cur.config.label + ')\nTHEME: ' + cur.config.theme + '\nPROMPT: ' + cur.config.prompt, 'l-green');
     }
   };
 
@@ -403,6 +458,10 @@
 
     await sleep(300);
     bootStatus.textContent = 'LOADING ADA CONTRACTS...';
+
+    await sleep(200);
+    bootStatus.textContent = 'INITIALIZING MODES...';
+    ModeRegistry.init();
 
     await sleep(300);
     bootStatus.textContent = 'DETECTING RUNTIMES...';

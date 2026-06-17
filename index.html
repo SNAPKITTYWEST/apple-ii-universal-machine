@@ -41,6 +41,9 @@
         <div class="status-line"><span class="sl-label">ASM:</span><span class="sl-value l-cyan">SIMULATED</span></div>
         <div class="status-line"><span class="sl-label">VAULT EVENTS:</span><span class="sl-value" id="vault-count">0</span></div>
         <div class="status-line"><span class="sl-label">SEALS:</span><span class="sl-value" id="seal-count">0</span></div>
+        <div class="status-line"><span class="sl-label">MODE:</span><span class="sl-value l-green" id="mode-label">APPLE II</span></div>
+        <div class="status-line"><span class="sl-label">AGENTS:</span><span class="sl-value" id="agent-count">0</span></div>
+        <div class="status-line"><span class="sl-label">TWINS:</span><span class="sl-value" id="twin-count">0</span></div>
       </div>
       <div class="panel-header" style="margin-top:8px">AUDIT LOG</div>
       <div id="audit-panel"></div>
@@ -56,6 +59,7 @@
     <button class="btn" data-cmd="status">STATUS</button>
     <button class="btn" data-cmd="export">EXPORT</button>
     <a class="btn" href="./holy-terminal.html" style="text-decoration:none;line-height:2">HOLYC</a>
+    <button class="btn" data-cmd="listmodes">MODES</button>
     <button class="btn danger" data-cmd="clear-vault">CLEAR VAULT</button>
   </div>
   <div id="runtime-bar">
@@ -66,7 +70,7 @@
     <button class="runtime-btn" data-rt="ollama">OLLAMA</button>
     <button class="runtime-btn" data-rt="wasm">WASM</button>
   </div>
-  <div id="honest-banner">CURRENT MODE: HOLY_SIM — This is a browser-safe simulation, not real Ring 0 HolyC execution.</div>
+  <div id="honest-banner">CURRENT MODE: <span id="banner-mode">APPLE II</span> — This is a browser-safe simulation, not real Ring 0 HolyC execution.</div>
 </div>
 <div id="boot-overlay" style="display:none"></div>
 <script src="./seal.js"></script>
@@ -95,6 +99,29 @@
 <script src="./lisp/fontana-decoder.js"></script>
 <script src="./lisp/lisp-expand.js"></script>
 <script src="./lisp/lisp-to-vm.js"></script>
+<script src="./runtime/runtime-registry.js"></script>
+<script src="./runtime/holy-sim.js"></script>
+<script src="./runtime/swift-wasm-adapter.js"></script>
+<script src="./runtime/webllm-adapter.js"></script>
+<script src="./runtime/ollama-adapter.js"></script>
+<script src="./runtime/wasm-adapter.js"></script>
+<script src="./agents/agent-registry.js"></script>
+<script src="./agents/agent-spawner.js"></script>
+<script src="./agents/agent-profile.js"></script>
+<script src="./agents/agent-runner.js"></script>
+<script src="./agents/agent-commands.js"></script>
+<script src="./twins/twin-registry.js"></script>
+<script src="./twins/twin-designer.js"></script>
+<script src="./twins/twin-profile.js"></script>
+<script src="./twins/twin-runner.js"></script>
+<script src="./twins/twin-commands.js"></script>
+<script src="./modes/mode-registry.js"></script>
+<script src="./modes/apple-mode.js"></script>
+<script src="./modes/linux-mode.js"></script>
+<script src="./modes/windows-mode.js"></script>
+<script src="./modes/holy-mode.js"></script>
+<script src="./modes/vm-mode.js"></script>
+<script src="./modes/agent-mode.js"></script>
 <script src="./app.js"></script>
 </body>
 </html>
