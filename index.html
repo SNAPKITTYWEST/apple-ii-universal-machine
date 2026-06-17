@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Apple II Universal Machine</title>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="./styles.css">
 </head>
 <body>
 <div id="boot-screen">
@@ -12,17 +12,64 @@
 <div id="boot-status">INITIALIZING...</div>
 </div>
 <div id="app" style="display:none">
-  <div id="term-header"></div>
-  <div id="term-output"></div>
-  <div id="term-input-row">
-    <span class="prompt">sunboot&gt; </span>
-    <input id="term-input" autofocus autocomplete="off" spellcheck="false" />
+  <div id="top-bar">
+    <span id="brand">APPLE II UNIVERSAL MACHINE</span>
+    <span id="runtime-badge">HOLY_SIM</span>
+    <span id="live-indicator">● LIVE</span>
   </div>
+  <div id="main-layout">
+    <div id="left-panel">
+      <div class="panel-header">TERMINAL</div>
+      <div id="terminal"></div>
+      <div id="input-row">
+        <span class="prompt" id="prompt-text">HolySim&gt; </span>
+        <input id="cmd-input" autofocus autocomplete="off" spellcheck="false" />
+      </div>
+    </div>
+    <div id="right-panel">
+      <div class="panel-header">SYSTEM STATUS</div>
+      <div id="status-box">
+        <div class="status-line"><span class="sl-label">KERNEL STATUS:</span><span class="sl-value l-green">LIVE</span></div>
+        <div class="status-line"><span class="sl-label">WOZ VAULT:</span><span class="sl-value l-green">ONLINE</span></div>
+        <div class="status-line"><span class="sl-label">INTERACTION:</span><span class="sl-value l-green">ENABLED</span></div>
+        <div class="status-line"><span class="sl-label">ADA CONTRACT:</span><span class="sl-value l-cyan">SIMULATED</span></div>
+        <div class="status-line"><span class="sl-label">RUNTIME:</span><span class="sl-value l-yellow" id="runtime-mode">HOLY_SIM</span></div>
+        <div class="status-line"><span class="sl-label">VAULT EVENTS:</span><span class="sl-value" id="vault-count">0</span></div>
+        <div class="status-line"><span class="sl-label">SEALS:</span><span class="sl-value" id="seal-count">0</span></div>
+      </div>
+      <div class="panel-header" style="margin-top:8px">AUDIT LOG</div>
+      <div id="audit-panel"></div>
+      <div class="panel-header" style="margin-top:8px">WOZ VAULT</div>
+      <div id="vault-panel"></div>
+    </div>
+  </div>
+  <div id="button-bar">
+    <button class="btn" data-cmd="boot">BOOT</button>
+    <button class="btn" data-cmd="debate">DEBATE</button>
+    <button class="btn" data-cmd="vault">VAULT</button>
+    <button class="btn" data-cmd="seal">SEAL</button>
+    <button class="btn" data-cmd="status">STATUS</button>
+    <button class="btn" data-cmd="export">EXPORT</button>
+    <a class="btn" href="./holy-terminal.html" style="text-decoration:none;line-height:2">HOLYC</a>
+    <button class="btn danger" data-cmd="clear-vault">CLEAR VAULT</button>
+  </div>
+  <div id="runtime-bar">
+    <span class="rl">RUNTIME:</span>
+    <button class="runtime-btn active" data-rt="holy-sim">HOLY_SIM</button>
+    <button class="runtime-btn disabled" data-rt="wasm">WASM: coming soon</button>
+    <button class="runtime-btn disabled" data-rt="webllm">WEBLLM: coming soon</button>
+    <button class="runtime-btn disabled" data-rt="ollama">OLLAMA: coming soon</button>
+  </div>
+  <div id="honest-banner">CURRENT MODE: HOLY_SIM — This is a browser-safe simulation, not real Ring 0 HolyC execution.</div>
 </div>
-<script src="seal.js"></script>
-<script src="woz-vault.js"></script>
-<script src="ascii-registry.js"></script>
-<script src="trust-deed.js"></script>
-<script src="kernel.js"></script>
+<div id="boot-overlay" style="display:none"></div>
+<script src="./seal.js"></script>
+<script src="./woz-vault.js"></script>
+<script src="./ascii-registry.js"></script>
+<script src="./trust-deed.js"></script>
+<script src="./contracts/ada-contract-sim.js"></script>
+<script src="./runtime/holy-sim.js"></script>
+<script src="./runtime/runtime-registry.js"></script>
+<script src="./app.js"></script>
 </body>
 </html>

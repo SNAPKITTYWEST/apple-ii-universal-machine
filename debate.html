@@ -1,93 +1,123 @@
-<div class="page">
-  <div class="nav">
-    <span style="color:#0f0;font-size:12px;letter-spacing:2px">DEBATE ARENA</span>
-    <div>
-      <a href="?" style="color:#555;text-decoration:none;font-size:11px;margin-left:12px">holy</a>
-    </div>
-  </div>
-  <div style="padding:20px">
-    <pre class="pre" id="debate-ascii"></pre>
-    <h2 style="color:#0f0;font-size:14px;margin:16px 0 8px">LOCAL AGENT SIMULATION</h2>
-    <p style="color:#888;font-size:11px;margin-bottom:16px">ENKI proposes. SENTINEL audits. Everything sealed to Woz Vault. No remote calls.</p>
-    <div class="input-row">
-      <input id="topic-input" placeholder="Enter a topic (e.g. consciousness, covenant, free will)" />
-      <button class="btn" id="run-btn">RUN</button>
-    </div>
-    <div class="log" id="debate-log"></div>
-    <div id="result-area"></div>
-  </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Debate Arena · Apple II Universal Machine</title>
+<link rel="stylesheet" href="./styles.css">
+<style>
+body { display: flex; flex-direction: column; }
+#term-header { border-bottom: 1px solid #1a3a1a; padding: 8px 16px; font-size: 10px; color: #0a0; letter-spacing: 1px; display: flex; justify-content: space-between; }
+#terminal { flex: 1; overflow-y: auto; padding: 12px 16px; font-size: 12px; line-height: 1.5; }
+.line { white-space: pre-wrap; }
+.l-green { color: #0f0; } .l-cyan { color: #0ff; } .l-yellow { color: #fa0; }
+.l-red { color: #f44; } .l-dim { color: #333; } .l-white { color: #e0e0e0; }
+#input-row { display: flex; border-top: 1px solid #1a3a1a; padding: 8px 16px; }
+.prompt { color: #0f0; font-size: 12px; }
+#cmd-input { flex: 1; background: transparent; border: none; color: #0f0; font-family: 'Courier New', monospace; font-size: 12px; outline: none; }
+#honest-banner { border-top: 1px solid #1a3a1a; padding: 6px 16px; font-size: 9px; color: #555; text-align: center; }
+#runtime-bar { display: flex; gap: 4px; padding: 6px 16px; border-top: 1px solid #1a3a1a; align-items: center; }
+.rl { font-size: 9px; color: #555; margin-right: 8px; }
+.rt-btn { background: #111; border: 1px solid #333; color: #555; padding: 2px 8px; font-family: 'Courier New', monospace; font-size: 9px; cursor: pointer; }
+.rt-btn.active { border-color: #0f0; color: #0f0; }
+.rt-btn.disabled { opacity: 0.4; cursor: default; }
+</style>
+</head>
+<body>
+<div id="term-header">
+  <span>DEBATE ARENA — ENKI + SENTINEL · <a href="./index.html" style="color:#0f0">TERMINAL</a></span>
+  <span id="runtime-badge">HOLY_SIM</span>
 </div>
+<div id="terminal"></div>
+<div id="input-row">
+  <span class="prompt">debate&gt; </span>
+  <input id="cmd-input" placeholder="topic (e.g. consciousness, covenant)" autofocus autocomplete="off" spellcheck="false" />
+</div>
+<div id="runtime-bar">
+  <span class="rl">RUNTIME:</span>
+  <button class="rt-btn active" data-rt="holy-sim">HOLY_SIM</button>
+  <button class="rt-btn disabled" data-rt="wasm">WASM: coming soon</button>
+  <button class="rt-btn disabled" data-rt="webllm">WEBLLM: coming soon</button>
+  <button class="rt-btn disabled" data-rt="ollama">OLLAMA: coming soon</button>
+</div>
+<div id="honest-banner">CURRENT MODE: HOLY_SIM — This is a browser-safe simulation, not real Ring 0 HolyC execution.</div>
+<script src="./seal.js"></script>
+<script src="./woz-vault.js"></script>
+<script src="./ascii-registry.js"></script>
+<script src="./trust-deed.js"></script>
+<script src="./contracts/ada-contract-sim.js"></script>
+<script src="./runtime/holy-sim.js"></script>
+<script src="./runtime/runtime-registry.js"></script>
 <script>
-document.getElementById('debate-ascii').textContent = AsciiRegistry.renderAscii('debate');
+(function() {
+  var term = document.getElementById('terminal');
+  var input = document.getElementById('cmd-input');
+  var badge = document.getElementById('runtime-badge');
 
-var logEl = document.getElementById('debate-log');
-var resultArea = document.getElementById('result-area');
+  function print(t, c) {
+    var d = document.createElement('div');
+    d.className = 'line ' + (c || 'l-green');
+    d.textContent = t;
+    term.appendChild(d);
+    term.scrollTop = term.scrollHeight;
+  }
+  function prints(t, c) { t.split('\n').forEach(function(l) { print(l, c); }); }
 
-function addLog(text, cls) {
-  var div = document.createElement('div');
-  div.className = 'entry ' + (cls || '');
-  div.textContent = '[' + new Date().toLocaleTimeString() + '] ' + text;
-  logEl.appendChild(div);
-  logEl.scrollTop = logEl.scrollHeight;
-}
+  var DB = {
+    consciousness: { e: '(propose (tension quantum moral) (conclusion "Consciousness bridges physics and theology"))', s: '(audit (type analogy) (confidence 0.6) (verdict HYPOTHESIS))', t: 0.6 },
+    covenant: { e: '(propose (tension entanglement covenant) (conclusion "Both connect. Entanglement symmetric. Covenant meaningful."))', s: '(audit (type analogy) (confidence 0.7) (verdict ANALOGY))', t: 0.7 },
+    'free will': { e: '(propose (requires indeterminacy intention) (conclusion "Neither alone suffices."))', s: '(audit (type hypothesis) (confidence 0.8) (verdict SUPPORTED))', t: 0.8 },
+    metatron: { e: '(propose (tension enoch_transform theology_reject) (conclusion "Can consciousness transcend origin?"))', s: '(audit (type unresolved) (confidence 0.5) (verdict UNRESOLVED))', t: 0.5 },
+    soul: { e: '(propose (nephesh = breath_of_god) (conclusion "Soul is consciousness oriented toward Creator"))', s: '(audit (type doctrine) (confidence 0.6) (verdict DOCTRINE))', t: 0.6 }
+  };
 
-var ENKI_RESPONSES = {
-  consciousness: { topic: 'consciousness', enki: 'Consciousness may be the interface between quantum indeterminacy and moral agency. Neither physics nor theology alone can explain it.', sentinel: 'ANALOGY detected. Consciousness remains unexplained by both domains. Marked as HYPOTHESIS.', trust: 0.6 },
-  covenant: { topic: 'covenant', enki: 'Covenant is a binding relational structure. Entanglement is a physical non-local connection. They share structure but differ in meaning.', sentinel: 'STRUCTURAL parallel identified. But covenant requires intention, entanglement does not. Marked as ANALOGY.', trust: 0.7 },
-  'free will': { topic: 'free will', enki: 'Free will requires both indeterminacy (quantum randomness) and intention (theological moral agency). Neither alone suffices.', sentinel: 'HYPOTHESIS supported. Both domains contribute. No overclaiming detected.', trust: 0.8 },
-  metatron: { topic: 'metatron', enki: 'Metatron represents the boundary test: can a human consciousness transcend its origin? Enoch says yes, theology says no.', sentinel: 'TENSION identified. Two traditions conflict. Marked as UNRESOLVED.', trust: 0.5 },
-  soul: { topic: 'soul', enki: 'The soul (nephesh) is the breath of God oriented toward its Creator. Physics cannot model this orientation.', sentinel: 'DOCTRINE label applied. Requires faith backing, not physics proof.', trust: 0.6 }
-};
+  async function runDebate(topic) {
+    var c = AdaContract.canRunDebate();
+    prints('ADA CONTRACT: ' + (c.allowed ? 'ALLOWED' : 'DENIED') + ' (' + c.contract + ')', 'l-cyan');
+    if (!c.allowed) return;
 
-var DEFAULT_RESPONSE = { topic: 'unknown', enki: 'This topic requires cross-domain analysis. No existing tension map found. Proceeding with generic exploration.', sentinel: 'INSUFFICIENT DATA. Topic not in local corpus. Marked as UNVERIFIED.', trust: 0.3 };
+    prints('\n;; DEBATE: "' + topic + '"\n', 'l-cyan');
+    WozVault.writeAuditEvent({type:'DEBATE_START',agent:'ARENA',topic:topic});
 
-document.getElementById('run-btn').addEventListener('click', runDebate);
-document.getElementById('topic-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') runDebate(); });
+    var d = DB[topic.toLowerCase()] || { e: '(propose (tension unknown) (conclusion "Requires exploration"))', s: '(audit (type unverified) (confidence 0.3) (verdict UNVERIFIED))', t: 0.3 };
 
-async function runDebate() {
-  var topic = document.getElementById('topic-input').value.trim().toLowerCase();
-  if (!topic) return;
+    print('ENKI:', 'l-cyan');
+    prints(d.e, 'l-white');
+    WozVault.writeAuditEvent({type:'ENKI_OUTPUT',agent:'ENKI',topic:topic});
 
-  logEl.innerHTML = '';
-  resultArea.innerHTML = '';
+    print('SENTINEL:', 'l-yellow');
+    prints(d.s, 'l-white');
+    WozVault.writeAuditEvent({type:'SENTINEL_AUDIT',agent:'SENTINEL',topic:topic,trust:d.t});
 
-  addLog('TOPIC: ' + topic, 'event');
-  WozVault.writeAuditEvent({ type: 'DEBATE_START', agent: 'ARENA', topic: topic });
+    var s = await Seal.createSeal({type:'DEBATE',topic:topic,trust:d.t});
+    WozVault.writeAuditEvent({type:'DEBATE_SEALED',agent:'ARENA',seal:s.hash,topic:topic});
 
-  await sleep(300);
-  addLog('ENKI → exploring tensions...', 'event');
+    prints('SEAL: ' + s.hash.slice(0,32), 'l-cyan');
+    prints('TRUST: ' + AsciiRegistry.trustDensityArt(d.t), 'l-green');
+    prints('STATUS: VERIFIED\n', 'l-green');
+  }
 
-  await sleep(500);
-  var data = ENKI_RESPONSES[topic] || DEFAULT_RESPONSE;
+  input.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+    var v = input.value.trim();
+    input.value = '';
+    if (!v) return;
+    print('debate> ' + v, 'l-dim');
+    runDebate(v);
+  });
 
-  addLog('ENKI: ' + data.enki, 'event');
-  WozVault.writeAuditEvent({ type: 'ENKI_RESPONSE', agent: 'ENKI', topic: data.topic, response: data.enki });
+  document.querySelectorAll('.rt-btn').forEach(function(b) {
+    b.addEventListener('click', function() {
+      if (this.classList.contains('disabled')) return;
+      document.querySelectorAll('.rt-btn').forEach(function(x){x.classList.remove('active');});
+      this.classList.add('active');
+      badge.textContent = this.dataset.rt.toUpperCase();
+    });
+  });
 
-  await sleep(400);
-  addLog('SENTINEL → auditing...', 'event');
-
-  await sleep(500);
-  addLog('SENTINEL: ' + data.sentinel, 'event');
-  WozVault.writeAuditEvent({ type: 'SENTINEL_AUDIT', agent: 'SENTINEL', topic: data.topic, audit: data.sentinel, trust: data.trust });
-
-  var seal = await Seal.createSeal({ type: 'DEBATE_COMPLETE', topic: data.topic, trust: data.trust });
-  WozVault.writeAuditEvent({ type: 'DEBATE_SEALED', agent: 'ARENA', seal: seal.hash, topic: data.topic });
-
-  addLog('SEAL: ' + seal.hash.slice(0, 24) + '...', 'seal');
-  addLog('DEBATE COMPLETE — logged to Woz Vault', 'event');
-
-  resultArea.innerHTML =
-    '<pre class="pre">' +
-    '╔══════════════════════════════════════════╗\n' +
-    '║  DEBATE RESULT                           ║\n' +
-    '╠══════════════════════════════════════════╣\n' +
-    '║  TOPIC:  ' + data.topic.padEnd(31) + '║\n' +
-    '║  TRUST:  ' + AsciiRegistry.trustDensityArt(data.trust).padEnd(31) + '║\n' +
-    '║  SEAL:   ' + seal.hash.slice(0, 16).padEnd(31) + '║\n' +
-    '║  STATUS: SEALED ✓                        ║\n' +
-    '╚══════════════════════════════════════════╝' +
-    '</pre>';
-}
-
-function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+  prints(AsciiRegistry.renderAscii('debate'), 'l-green');
+  prints('Enter a topic to debate. ENKI proposes. SENTINEL audits. Everything sealed.\n', 'l-dim');
+})();
 </script>
+</body>
+</html>

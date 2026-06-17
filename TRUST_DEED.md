@@ -1,122 +1,31 @@
-# Apple II Universal Machine Trust Deed
+# Trust Deed
 
-## Sun Boot / Woz Vault / Holy Fallback Covenant
+## Covenant
 
-### 1. Purpose
+This application is governed by the following trust rules:
 
-This deed governs Apple II Universal Machine, a free local-first static computing cockpit hosted on GitHub Pages.
+1. **No remote execution** — Everything runs locally in the browser.
+2. **No hidden API calls** — No network requests without explicit user action.
+3. **No paid services** — No subscription or payment required.
+4. **Audit preserved** — All decisions logged until user explicitly clears.
+5. **No silent failure** — Every error reported visibly.
+6. **Every boot sealed** — Each session gets a SHA-256 audit seal.
+7. **Simulation honesty** — All agents are browser-simulated, not real Ring 0 HolyC.
+8. **Ada contracts enforced** — Trust gates implemented via JS simulator matching real Ada source.
 
-The system exists to let users boot, inspect, simulate, audit, and seal agent behavior without paid APIs, hidden servers, or token dependency.
+## Ada Contract
 
-### 2. Core Law
+The Ada contract source files (`trust_contract.ads`, `trust_contract.adb`) define the trust rules in real Ada. The JS simulator (`ada-contract-sim.js`) enforces these same rules in the browser.
 
-No boot is trusted until sealed.
-No route is valid until recoverable.
-No agent action is accepted unless audited.
-No user data leaves the browser without explicit user action.
+## Runtime Modes
 
-### 3. Sun Boot
+- **HOLY_SIM** (active) — Browser-safe simulation
+- **WASM** (coming soon) — WebAssembly runtime
+- **WebLLM** (coming soon) — Browser LLM inference
+- **Ollama** (coming soon) — Desktop bridge to local models
 
-Sun Boot is the first verified startup sequence.
+## Sealing
 
-Sun Boot must:
+Every significant action generates a SHA-256 seal via Web Crypto. Seals are logged to the Woz Vault (localStorage).
 
-* Start from `index.html`
-* Load `kernel.js`
-* Initialize Woz Vault
-* Render ASCII boot state
-* Load Holy Page or requested route
-* Write audit event
-* Generate SHA-256 boot seal
-
-### 4. Holy Page Fallback
-
-The Holy Page is mandatory rescue mode.
-
-If any page, route, script, or simulation fails, the system must show `holy.html`.
-
-Failure must never produce a blank screen.
-
-### 5. Woz Vault
-
-Woz Vault is local browser memory.
-
-For MVP, Woz Vault uses localStorage.
-
-Woz Vault must store:
-
-* boot events
-* route events
-* debate events
-* agent outputs
-* seals
-* snapshots
-
-Audit events are append-first.
-
-The system may clear Woz Vault only when the user explicitly presses Clear Woz Vault.
-
-### 6. Agent Simulation
-
-ENKI may propose.
-
-SENTINEL must audit.
-
-No agent may claim real execution, real proof, or real hardware access in the MVP.
-
-All MVP agents are simulated local agents unless explicitly upgraded later.
-
-### 7. Trust Gate
-
-Before output is accepted, the Trust Gate checks:
-
-* Is this local-only?
-* Is this non-destructive?
-* Is this auditable?
-* Is this sealable?
-* Is this recoverable?
-
-If not, mark:
-
-```
-TRUST_DENIED
-```
-
-### 8. Future Upgrade Path
-
-After MVP boots, future layers may be added:
-
-* WebLLM/WebGPU browser inference
-* Web Worker agent brain
-* WASM Rust logic
-* IndexedDB Woz Vault
-* Ollama desktop bridge
-* Lean 4 proof checks
-* Ada contract checks
-* Lisp/Fontana symbolic FFI
-* QEMU sandbox
-* HolyC experiments inside VM only
-
-These are not required for first Sun Boot.
-
-### 9. Safety Boundary
-
-Do not implement real Ring 0 execution in the browser.
-
-Do not implement destructive shell commands.
-
-Do not connect to local Ollama automatically without user consent.
-
-Do not claim quantum, hardware, or formal proof execution unless the code actually performs it.
-
-### 10. Final Covenant
-
-GitHub Pages is the ROM.
-Index is the bootloader.
-Kernel JS is the page kernel.
-Holy Page is rescue mode.
-Woz Vault is memory.
-ASCII is the dashboard.
-SHA-256 is the seal.
-
-One cockpit. Many agents. No token tax.
+## This is a research prototype, not a production system.
