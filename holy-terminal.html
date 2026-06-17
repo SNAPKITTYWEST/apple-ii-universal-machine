@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="./styles.css">
 <style>
 body { display: flex; flex-direction: column; }
-#term-header { border-bottom: 1px solid #1a3a1a; padding: 8px 16px; font-size: 10px; color: #0a0; letter-spacing: 1px; }
+#term-header { border-bottom: 1px solid #1a3a1a; padding: 8px 16px; font-size: 10px; color: #0a0; letter-spacing: 1px; display: flex; justify-content: space-between; }
 #terminal { flex: 1; overflow-y: auto; padding: 12px 16px; font-size: 12px; line-height: 1.5; }
 .line { white-space: pre-wrap; word-break: break-all; }
 .l-green { color: #0f0; } .l-cyan { color: #0ff; } .l-yellow { color: #fa0; }
@@ -15,15 +15,45 @@ body { display: flex; flex-direction: column; }
 #input-row { display: flex; border-top: 1px solid #1a3a1a; padding: 8px 16px; }
 .prompt { color: #0f0; font-size: 12px; white-space: nowrap; }
 #cmd-input { flex: 1; background: transparent; border: none; color: #0f0; font-family: 'Courier New', monospace; font-size: 12px; outline: none; }
+#button-bar { display: flex; gap: 4px; padding: 6px 16px; border-top: 1px solid #1a3a1a; flex-wrap: wrap; }
+.btn { background: #111; border: 1px solid #1a3a1a; color: #0a0; padding: 3px 10px; font-family: 'Courier New', monospace; font-size: 10px; cursor: pointer; letter-spacing: 1px; }
+.btn:hover { border-color: #0f0; color: #0f0; }
+.btn.danger { color: #f44; border-color: #300; }
+.btn.danger:hover { border-color: #f44; }
+#status-bar { display: flex; gap: 16px; padding: 4px 16px; border-top: 1px solid #1a3a1a; font-size: 9px; color: #555; }
 #honest-banner { border-top: 1px solid #1a3a1a; padding: 6px 16px; font-size: 9px; color: #555; text-align: center; }
 </style>
 </head>
 <body>
-<div id="term-header">HOLY SIMULATED TERMINAL — Not real Ring 0 HolyC</div>
+<div id="term-header">
+  <span>HOLYC SIMULATED TERMINAL</span>
+  <span id="header-counts">VAULT: 0 · SEALS: 0</span>
+</div>
 <div id="terminal"></div>
 <div id="input-row">
   <span class="prompt">HolySim&gt; </span>
   <input id="cmd-input" autofocus autocomplete="off" spellcheck="false" />
+</div>
+<div id="button-bar">
+  <button class="btn" data-cmd="help">HELP</button>
+  <button class="btn" data-cmd="boot">BOOT</button>
+  <button class="btn" data-cmd="status">STATUS</button>
+  <button class="btn" data-cmd="trust">TRUST</button>
+  <button class="btn" data-cmd="agents">AGENTS</button>
+  <button class="btn" data-cmd="vault">VAULT</button>
+  <button class="btn" data-cmd="seal">SEAL</button>
+  <button class="btn" data-cmd="debate">DEBATE</button>
+  <button class="btn" data-cmd="export">EXPORT</button>
+  <button class="btn" data-cmd="about">ABOUT</button>
+  <button class="btn" data-cmd="clear">CLEAR</button>
+  <button class="btn danger" data-cmd="clear-vault">CLEAR VAULT</button>
+</div>
+<div id="status-bar">
+  <span>KERNEL: SIMULATED</span>
+  <span>VAULT: <span id="vault-count">0</span></span>
+  <span>SEALS: <span id="seal-count">0</span></span>
+  <span>AGENTS: ENKI+SENTINEL</span>
+  <span>CONTRACTS: Ada SIM</span>
 </div>
 <div id="honest-banner">CURRENT MODE: HOLY_SIM — This is a browser-safe simulation, not real Ring 0 HolyC execution.</div>
 <script src="./seal.js"></script>
@@ -37,8 +67,14 @@ body { display: flex; flex-direction: column; }
 (function() {
   var term = document.getElementById('terminal');
   var input = document.getElementById('cmd-input');
+  var vaultCountEl = document.getElementById('vault-count');
+  var sealCountEl = document.getElementById('seal-count');
+  var headerCounts = document.getElementById('header-counts');
+
   var history = [];
   var historyIdx = -1;
+  var sealTotal = 0;
+  var currentRuntime = 'holy-sim';
 
   function print(t, c) {
     var d = document.createElement('div');
@@ -48,55 +84,257 @@ body { display: flex; flex-direction: column; }
     term.scrollTop = term.scrollHeight;
   }
   function prints(t, c) { t.split('\n').forEach(function(l) { print(l, c); }); }
+  function promptEcho(cmd) { print('HolySim> ' + cmd, 'l-dim'); }
+
+  function refreshCounts() {
+    var events = WozVault.readAuditLog();
+    vaultCountEl.textContent = events.length;
+    sealCountEl.textContent = sealTotal;
+    headerCounts.textContent = 'VAULT: ' + events.length + ' · SEALS: ' + sealTotal;
+  }
+
+  function contractCheck(action, args) {
+    var result;
+    switch (action) {
+      case 'boot': result = AdaContract.canBoot(); break;
+      case 'debate': result = AdaContract.canRunDebate(); break;
+      case 'audit-write': result = AdaContract.canWriteAudit(); break;
+      case 'clear': result = AdaContract.canClearVault(args && args.confirmed); break;
+      case 'export': result = AdaContract.canExportSnapshot(); break;
+      default: result = { allowed: true, contract: 'default' };
+    }
+    WozVault.writeAuditEvent({
+      type: 'CONTRACT_CHECK', agent: 'ADA_SIM',
+      action: action, result: result.allowed ? 'ALLOWED' : 'DENIED', contract: result.contract
+    });
+    return result;
+  }
+
+  async function doSeal(payload) {
+    var s = await Seal.createSeal(payload);
+    sealTotal++;
+    WozVault.writeAuditEvent({ type: 'SEAL_CREATED', agent: 'SEAL', seal: s.hash });
+    refreshCounts();
+    return s;
+  }
+
+  var DB = {
+    consciousness: { e: '(propose (tension quantum moral) (conclusion "Consciousness bridges physics and theology"))', s: '(audit (type analogy) (confidence 0.6) (verdict HYPOTHESIS))', t: 0.6 },
+    covenant: { e: '(propose (tension entanglement covenant) (conclusion "Both connect. Entanglement symmetric. Covenant meaningful."))', s: '(audit (type analogy) (confidence 0.7) (verdict ANALOGY))', t: 0.7 },
+    'free will': { e: '(propose (requires indeterminacy intention) (conclusion "Neither alone suffices."))', s: '(audit (type hypothesis) (confidence 0.8) (verdict SUPPORTED))', t: 0.8 },
+    metatron: { e: '(propose (tension enoch_transform theology_reject) (conclusion "Can consciousness transcend origin?"))', s: '(audit (type unresolved) (confidence 0.5) (verdict UNRESOLVED))', t: 0.5 },
+    soul: { e: '(propose (nephesh = breath_of_god) (conclusion "Soul is consciousness oriented toward Creator"))', s: '(audit (type doctrine) (confidence 0.6) (verdict DOCTRINE))', t: 0.6 }
+  };
 
   var CMDS = {
     help: function() {
       prints(
-        '╔══════════════════════════════════════════╗\n' +
-        '║  HolySim Commands                        ║\n' +
-        '╠══════════════════════════════════════════╣\n' +
-        '║  Help;          — show commands          ║\n' +
-        '║  Boot;          — reboot                 ║\n' +
-        '║  TrustDeed;     — show rules             ║\n' +
-        '║  AgentStatus;   — agent info             ║\n' +
-        '║  WozVault;      — audit log              ║\n' +
-        '║  Seal;          — SHA-256 seal           ║\n' +
-        '║  Debate("t");   — run debate             ║\n' +
-        '║  Clear;         — clear terminal         ║\n' +
-        '╚══════════════════════════════════════════╝',
+        '╔══════════════════════════════════════════════════════════╗\n' +
+        '║  HOLYC SIMULATED TERMINAL — COMMANDS                   ║\n' +
+        '╠══════════════════════════════════════════════════════════╣\n' +
+        '║  Help;             — show this                         ║\n' +
+        '║  Boot;             — reboot system                     ║\n' +
+        '║  Status;           — system status                     ║\n' +
+        '║  Trust;            — run trust gate                    ║\n' +
+        '║  Agents;           — list agents                       ║\n' +
+        '║  WozVault;         — show audit log                    ║\n' +
+        '║  Seal;             — generate SHA-256 seal             ║\n' +
+        '║  Debate("topic");  — run debate on topic               ║\n' +
+        '║  Export;           — export vault as JSON              ║\n' +
+        '║  About;            — about this machine                ║\n' +
+        '║  Clear;            — clear terminal                    ║\n' +
+        '║  ClearVault;       — wipe Woz Vault                    ║\n' +
+        '╚══════════════════════════════════════════════════════════╝',
         'l-cyan'
       );
     },
-    boot: function() { prints(AsciiRegistry.renderAscii('sunboot'), 'l-green'); WozVault.writeAuditEvent({type:'REBOOT',agent:'USER'}); },
-    holy: function() { prints(AsciiRegistry.renderAscii('verified'), 'l-green'); },
-    trustdeed: function() { prints('TRUST DEED:\n  1. No remote execution\n  2. No hidden API calls\n  3. No paid services\n  4. Audit preserved\n  5. No silent failure\n  6. Every boot sealed', 'l-cyan'); },
-    agentstatus: function() { prints('ENKI: active (sim)\nSENTINEL: active (sim)\nAll local, no remote.', 'l-green'); },
-    wozvault: function() { var e = WozVault.readAuditLog(); prints('WOZ VAULT: ' + e.length + ' events', 'l-green'); },
-    vault: function() { CMDS.wozvault(); },
-    seal: function() {
-      Seal.createSeal({type:'MANUAL'}).then(function(s) {
-        WozVault.writeAuditEvent({type:'SEAL',agent:'USER',seal:s.hash});
-        prints('SEAL: ' + s.hash + '\nSTATUS: SEALED ✓', 'l-cyan');
+
+    about: function() {
+      prints(
+        '\n  APPLE II UNIVERSAL MACHINE\n' +
+        '  HolyC Simulated Terminal v1.0\n\n' +
+        '  A local-first browser cockpit for agent simulation.\n' +
+        '  No Node. No backend. No paid APIs.\n\n' +
+        '  ROM:      GitHub Pages\n' +
+        '  Kernel:   holy-terminal.html\n' +
+        '  Memory:   Woz Vault (localStorage)\n' +
+        '  Seal:     SHA-256 (Web Crypto)\n' +
+        '  Runtime:  ' + currentRuntime + '\n' +
+        '  Agents:   ENKI (proposer) + SENTINEL (auditor)\n' +
+        '  Contracts: Ada simulator (ada-contract-sim.js)\n\n' +
+        '  "One cockpit. Many agents. No token tax."',
+        'l-white'
+      );
+    },
+
+    boot: function() {
+      var c = contractCheck('boot');
+      if (!c.allowed) { prints('ADA CONTRACT: DENIED — ' + c.reason, 'l-red'); return; }
+      prints('ADA CONTRACT: ALLOWED (' + c.contract + ')', 'l-cyan');
+      prints(AsciiRegistry.renderAscii('sunboot'), 'l-green');
+      WozVault.writeAuditEvent({ type: 'REBOOT', agent: 'USER' });
+      doSeal({ type: 'REBOOT_SEAL' }).then(function(s) {
+        prints('SEAL: ' + s.hash.slice(0, 24) + '...', 'l-cyan');
+        refreshCounts();
       });
     },
+
+    trust: function() {
+      var r = TrustDeed.gate({});
+      prints(
+        '\n;; TRUST GATE\n' +
+        '  local_only:     ' + r.checks.local_only + '\n' +
+        '  non_destructive:' + r.checks.non_destructive + '\n' +
+        '  auditable:      ' + r.checks.auditable + '\n' +
+        '  sealable:       ' + r.checks.sealable + '\n' +
+        '  recoverable:    ' + r.checks.recoverable + '\n' +
+        '  verdict:        ' + r.verdict,
+        r.verdict === 'TRUST_APPROVED' ? 'l-green' : 'l-red'
+      );
+      print('');
+      WozVault.writeAuditEvent({ type: 'TRUST_CHECK', agent: 'USER', verdict: r.verdict });
+      refreshCounts();
+    },
+
+    agents: function() {
+      prints(
+        '\n╔══════════════════════════════════════╗\n' +
+        '║  AGENTS                              ║\n' +
+        '╠══════════════════════════════════════╣\n' +
+        '║  ENKI       — tension proposer       ║\n' +
+        '║  SENTINEL   — claim auditor          ║\n' +
+        '║                                      ║\n' +
+        '║  All agents are local simulations.   ║\n' +
+        '╚══════════════════════════════════════╝',
+        'l-green'
+      );
+      print('');
+      WozVault.writeAuditEvent({ type: 'AGENTS_LIST', agent: 'USER' });
+      refreshCounts();
+    },
+
+    status: function() {
+      var events = WozVault.readAuditLog();
+      prints(
+        '\n╔══════════════════════════════════════╗\n' +
+        '║  SYSTEM STATUS                       ║\n' +
+        '╠══════════════════════════════════════╣\n' +
+        '║  VERSION:   1.0.0                    ║\n' +
+        '║  BOOT:      verified ✓               ║\n' +
+        '║  VAULT:     ' + String(events.length).padStart(3) + ' events logged         ║\n' +
+        '║  SEALS:     ' + String(sealTotal).padStart(3) + ' generated            ║\n' +
+        '║  RUNTIME:   ' + currentRuntime.padEnd(25) + '║\n' +
+        '║  AGENTS:    ENKI + SENTINEL          ║\n' +
+        '║  CONTRACTS: Ada SIMULATED            ║\n' +
+        '╚══════════════════════════════════════╝',
+        'l-green'
+      );
+      print('');
+    },
+
+    wozvault: function() { CMDS.vault(); },
+    vault: function() {
+      var events = WozVault.readAuditLog();
+      prints('\n;; WOZ VAULT — AUDIT LOG (' + events.length + ' events)', 'l-cyan');
+      if (events.length === 0) {
+        prints(';; empty', 'l-dim');
+      } else {
+        for (var i = 0; i < events.length; i++) {
+          var e = events[i];
+          var line = '  [' + (e.timestamp || '').slice(11, 19) + '] ' + e.type;
+          if (e.agent) line += ' · ' + e.agent;
+          if (e.seal) line += ' · seal:' + e.seal.slice(0, 12);
+          print(line, e.type.indexOf('SEAL') >= 0 ? 'l-cyan' : 'l-dim');
+        }
+      }
+      print('');
+    },
+
+    seal: function(args) {
+      var data = args ? args.join(' ').replace(/[()"]/g, '').trim() : 'manual-payload';
+      doSeal({ type: 'MANUAL_SEAL', data: data }).then(function(s) {
+        prints(
+          ';; SHA-256 SEAL\n' +
+          '  payload: "' + data + '"\n' +
+          '  hash:    ' + s.hash + '\n' +
+          '  time:    ' + s.timestamp + '\n' +
+          '  status:  SEALED ✓',
+          'l-cyan'
+        );
+        print('');
+      });
+    },
+
     debate: function(args) {
-      var topic = args ? args.join(' ').replace(/[()"]/g,'') : 'consciousness';
-      prints('DEBATE: "' + topic + '"\nENKI: proposing...\nSENTINEL: auditing...', 'l-cyan');
-      WozVault.writeAuditEvent({type:'DEBATE',agent:'ARENA',topic:topic});
-      Seal.createSeal({type:'DEBATE',topic:topic}).then(function(s) {
-        prints('SEAL: ' + s.hash.slice(0,24) + '...\nSTATUS: VERIFIED', 'l-cyan');
+      var c = contractCheck('debate');
+      if (!c.allowed) { prints('ADA CONTRACT: DENIED', 'l-red'); return; }
+      prints('ADA CONTRACT: ALLOWED (' + c.contract + ')', 'l-cyan');
+
+      var topic = args ? args.join(' ').replace(/[()"]/g, '').trim() : '';
+      if (!topic) topic = 'consciousness';
+
+      prints('\n;; DEBATE: "' + topic + '"', 'l-cyan');
+      WozVault.writeAuditEvent({ type: 'DEBATE_START', agent: 'ARENA', topic: topic });
+
+      var d = DB[topic.toLowerCase()] || { e: '(propose (tension unknown) (conclusion "Requires exploration"))', s: '(audit (type unverified) (confidence 0.3) (verdict UNVERIFIED))', t: 0.3 };
+
+      print('ENKI:', 'l-cyan');
+      prints(d.e, 'l-white');
+      WozVault.writeAuditEvent({ type: 'ENKI_OUTPUT', agent: 'ENKI', topic: topic });
+
+      print('SENTINEL:', 'l-yellow');
+      prints(d.s, 'l-white');
+      WozVault.writeAuditEvent({ type: 'SENTINEL_AUDIT', agent: 'SENTINEL', topic: topic, trust: d.t });
+
+      doSeal({ type: 'DEBATE', topic: topic, trust: d.t }).then(function(s) {
+        prints('SEAL: ' + s.hash.slice(0, 32), 'l-cyan');
+        prints('TRUST: ' + AsciiRegistry.trustDensityArt(d.t), 'l-green');
+        prints('STATUS: VERIFIED', 'l-green');
+        print('');
       });
     },
-    clear: function() { term.innerHTML = ''; }
+
+    export: function() {
+      var c = contractCheck('export');
+      if (!c.allowed) { prints('ADA CONTRACT: DENIED', 'l-red'); return; }
+      var data = {
+        version: '1.0.0',
+        timestamp: new Date().toISOString(),
+        runtime: currentRuntime,
+        events: WozVault.readAuditLog(),
+        snapshots: WozVault.readSnapshots()
+      };
+      var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'woz-vault-snapshot-' + Date.now() + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      prints(';; SNAPSHOT EXPORTED ✓\n;; file: ' + a.download, 'l-green');
+      WozVault.writeAuditEvent({ type: 'SNAPSHOT_EXPORT', agent: 'USER' });
+      doSeal({ type: 'EXPORT_SEAL' }).then(function() { refreshCounts(); });
+    },
+
+    clear: function() { term.innerHTML = ''; },
+
+    clearvault: function() {
+      var c = contractCheck('clear', { confirmed: true });
+      if (!c.allowed) { prints('ADA CONTRACT: DENIED — ' + c.reason, 'l-red'); return; }
+      WozVault.clearVault();
+      sealTotal = 0;
+      prints(';; WOZ VAULT CLEARED ✓', 'l-yellow');
+      refreshCounts();
+    }
   };
 
   function exec(cmd) {
     cmd = cmd.trim();
     if (!cmd) return;
-    print('HolySim> ' + cmd, 'l-dim');
-    history.push(cmd); historyIdx = history.length;
+    promptEcho(cmd);
+    history.push(cmd);
+    historyIdx = history.length;
 
-    // Parse: Command; or Command("args");
     var m = cmd.match(/^(\w+)\s*(?:\(\s*"([^"]*)"\s*\))?\s*;?\s*$/);
     var verb, args;
     if (m) {
@@ -105,21 +343,36 @@ body { display: flex; flex-direction: column; }
     } else {
       var p = cmd.split(/\s+/);
       verb = p[0].toLowerCase().replace(/;$/, '');
-      args = p.slice(1).map(function(a){return a.replace(/[();"]/g,'');});
+      args = p.slice(1).map(function(a) { return a.replace(/[();"]/g, ''); });
     }
 
     if (CMDS[verb]) CMDS[verb](args);
     else print('Unknown: ' + verb + ' — type Help;', 'l-red');
+    refreshCounts();
   }
 
   input.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') { var v = input.value; input.value = ''; exec(v); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); if (historyIdx>0){historyIdx--;input.value=history[historyIdx];} }
-    else if (e.key === 'ArrowDown') { e.preventDefault(); if (historyIdx<history.length-1){historyIdx++;input.value=history[historyIdx];}else{historyIdx=history.length;input.value='';} }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); if (historyIdx > 0) { historyIdx--; input.value = history[historyIdx]; } }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); if (historyIdx < history.length - 1) { historyIdx++; input.value = history[historyIdx]; } else { historyIdx = history.length; input.value = ''; } }
+  });
+
+  document.querySelectorAll('.btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var cmd = this.dataset.cmd;
+      if (cmd === 'clear-vault') {
+        if (!confirm('Clear all Woz Vault data?')) return;
+        cmd = 'clearvault';
+      }
+      input.value = cmd;
+      exec(cmd);
+      input.value = '';
+    });
   });
 
   prints(AsciiRegistry.renderAscii('sunboot'), 'l-green');
   prints('Type Help; for commands. HolyC-style syntax with semicolons.\n', 'l-dim');
+  refreshCounts();
 })();
 </script>
 </body>
