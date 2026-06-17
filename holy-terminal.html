@@ -73,6 +73,11 @@ body { display: flex; flex-direction: column; }
   <button class="btn" data-cmd="listarchitectures">ARCH</button>
   <button class="btn" data-cmd="githubstatus">GITHUB</button>
   <button class="btn danger" data-cmd="clear-vault">CLEAR VAULT</button>
+    <button class="btn" data-cmd="tour">TOUR</button>
+    <button class="btn" data-cmd="copilot">COPILOT</button>
+    <button class="btn" data-cmd="missioncontrol">MISSION</button>
+    <button class="btn" data-cmd="createtwinfromwizard">TWIN WIZARD</button>
+    <button class="btn" data-cmd="twindashboard">TWIN DASH</button>
 </div>
 <div id="status-bar">
   <span>KERNEL: SIMULATED</span>
@@ -193,6 +198,19 @@ body { display: flex; flex-direction: column; }
 <script src="./github/inverted-repo-template.js"></script>
 <script src="./github/repo-staple-writer.js"></script>
 <script src="./github/github-commands.js"></script>
+<script src="./onboarding/copilot-guide.js"></script>
+<script src="./onboarding/tour-steps.js"></script>
+<script src="./onboarding/voice-narrator.js"></script>
+<script src="./onboarding/command-coach.js"></script>
+<script src="./onboarding/mission-control.js"></script>
+<script src="./twin-builder/twin-wizard.js"></script>
+<script src="./twin-builder/twin-archetypes.js"></script>
+<script src="./twin-builder/twin-personality.js"></script>
+<script src="./twin-builder/twin-skills.js"></script>
+<script src="./twin-builder/twin-memory.js"></script>
+<script src="./twin-builder/twin-runtime.js"></script>
+<script src="./twin-builder/twin-dashboard.js"></script>
+<script src="./twin-builder/twin-onboarding.js"></script>
 <script>
 (function() {
   var term = document.getElementById('terminal');
@@ -903,7 +921,26 @@ body { display: flex; flex-direction: column; }
     createinvertedrepo: async function(args) { var r = await GitHubCommands.createRepo(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
     createrepofromtemplate: async function(args) { var r = await GitHubCommands.createFromTemplate(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
     stapleremoterepo: async function(args) { var r = await GitHubCommands.stapleRemote(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
-    verifyremoterepo: async function(args) { var r = await GitHubCommands.verifyRemote(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); }
+    verifyremoterepo: async function(args) { var r = await GitHubCommands.verifyRemote(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+
+    // --- Onboarding Commands ---
+    tour: function() { var r = TourSteps.start(); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    copilot: function() { var r = CopilotGuide.show(); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    missioncontrol: function() { var r = MissionControl.show(); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    nextstep: function() { var r = TourSteps.next(); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    replaynarration: function() { var r = VoiceNarrator.replayLast(); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    mutevoice: function() { var r = VoiceNarrator.toggle(); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+
+    // --- Twin Builder Commands ---
+    createtwinfromwizard: function() { var r = TwinWizard.start(); prints(r.output || 'Twin Wizard started.', 'l-cyan'); refreshCounts(); },
+    twindashboard: function(args) { var r = TwinDashboard.show(); prints(r.output || 'Twin Dashboard opened.', 'l-cyan'); refreshCounts(); },
+    twinhelp: function() { prints('Twin Builder Commands:\n  CreateTwinFromWizard; — start 5-step twin wizard\n  TwinDashboard; — open twin dashboard\n  TwinHelp; — show this help\n  TalkTwin "name" "message"; — chat with twin\n  ChangeRole "name" "newrole"; — change twin role\n  ChangePersonality "name" "newpersonality"; — change twin personality\n  ExportTwin "name"; — export twin as JSON', 'l-cyan'); },
+
+    // --- Twin Runtime Commands (requires TwinCommands) ---
+    talktwin: async function(args) { var r = await TwinCommands.run(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    changerole: async function(args) { var r = await TwinCommands.design(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    changepersonality: async function(args) { var r = await TwinCommands.design(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
+    exittwin: function(args) { var r = TwinCommands.exportJSON(args); prints(r.output, r.type === 'error' ? 'l-red' : 'l-green'); refreshCounts(); },
   };
 
   function exec(cmd) {
