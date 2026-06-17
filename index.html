@@ -35,6 +35,10 @@
         <div class="status-line"><span class="sl-label">ADA CONTRACT:</span><span class="sl-value l-cyan">SIMULATED</span></div>
         <div class="status-line"><span class="sl-label">RUNTIME:</span><span class="sl-value l-yellow" id="runtime-mode">HOLY_SIM</span></div>
         <div class="status-line"><span class="sl-label">SWIFTWASM:</span><span class="sl-value l-yellow">FALLBACK_JS</span></div>
+        <div class="status-line"><span class="sl-label">WEBLLM:</span><span class="sl-value l-yellow">FALLBACK_JS</span></div>
+        <div class="status-line"><span class="sl-label">OLLAMA:</span><span class="sl-value l-yellow">FALLBACK_JS</span></div>
+        <div class="status-line"><span class="sl-label">WASM:</span><span class="sl-value l-yellow">FALLBACK_JS</span></div>
+        <div class="status-line"><span class="sl-label">ASM:</span><span class="sl-value l-cyan">SIMULATED</span></div>
         <div class="status-line"><span class="sl-label">VAULT EVENTS:</span><span class="sl-value" id="vault-count">0</span></div>
         <div class="status-line"><span class="sl-label">SEALS:</span><span class="sl-value" id="seal-count">0</span></div>
       </div>
@@ -57,10 +61,10 @@
   <div id="runtime-bar">
     <span class="rl">RUNTIME:</span>
     <button class="runtime-btn active" data-rt="holy-sim">HOLY_SIM</button>
-    <button class="runtime-btn" data-rt="swift-wasm">SWIFTWASM: FALLBACK_JS</button>
-    <button class="runtime-btn disabled" data-rt="wasm">WASM: coming soon</button>
-    <button class="runtime-btn disabled" data-rt="webllm">WEBLLM: coming soon</button>
-    <button class="runtime-btn disabled" data-rt="ollama">OLLAMA: coming soon</button>
+    <button class="runtime-btn" data-rt="swift-wasm">SWIFTWASM</button>
+    <button class="runtime-btn" data-rt="webllm">WEBLLM</button>
+    <button class="runtime-btn" data-rt="ollama">OLLAMA</button>
+    <button class="runtime-btn" data-rt="wasm">WASM</button>
   </div>
   <div id="honest-banner">CURRENT MODE: HOLY_SIM — This is a browser-safe simulation, not real Ring 0 HolyC execution.</div>
 </div>

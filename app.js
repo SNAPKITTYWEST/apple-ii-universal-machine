@@ -117,13 +117,16 @@
         '║  debate "topic"— debate on specific topic               ║\n' +
         '║  vault         — show audit log                         ║\n' +
         '║  seal          — generate SHA-256 seal                  ║\n' +
-        '║  status        — system status                          ║\n' +
+        '║  status        — system status + runtime detection      ║\n' +
         '║  export        — export vault snapshot as JSON          ║\n' +
         '║  clear         — clear terminal                         ║\n' +
         '║  clear-vault   — wipe Woz Vault (requires confirm)     ║\n' +
         '║  trust         — run trust gate                         ║\n' +
         '║  agents        — list agents                            ║\n' +
         '║  about         — about this machine                     ║\n' +
+        '║                                                          ║\n' +
+        '║  RUNTIMES: SWIFTWASM · WEBLLM · OLLAMA · WASM          ║\n' +
+        '║  Click runtime buttons to switch core.                  ║\n' +
         '╚══════════════════════════════════════════════════════════╝',
         'l-cyan'
       );
@@ -400,6 +403,18 @@
 
     await sleep(300);
     bootStatus.textContent = 'LOADING ADA CONTRACTS...';
+
+    await sleep(300);
+    bootStatus.textContent = 'DETECTING RUNTIMES...';
+
+    await sleep(400);
+    var rtResults = await RuntimeRegistry.initAll();
+    var rtSummary = [];
+    if (rtResults.swift) rtSummary.push('SWIFTWASM:ON');
+    if (rtResults.webllm) rtSummary.push('WEBLLM:ON');
+    if (rtResults.ollama) rtSummary.push('OLLAMA:ON');
+    if (rtResults.wasm) rtSummary.push('WASM:ON');
+    bootStatus.textContent = rtSummary.length > 0 ? rtSummary.join(' ') : 'RUNTIMES: JS_SIM';
 
     await sleep(300);
     bootStatus.textContent = 'SUN BOOT COMPLETE ✓';
