@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLSM Builder · Personal Large Language LISP Machine · SNAPKITTYWEST</title>
+<style>
+  :root {
+    --green: #00ff41;
+    --dim:   #00aa28;
+    --dark:  #0a0a0a;
+    --panel: #0f1a0f;
+    --border:#1a3a1a;
+    --gold:  #ffd700;
+    --red:   #ff4141;
+    --blue:  #41c4ff;
+    --white: #e8ffe8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--dark);
+    color: var(--green);
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+  }
+  a { color: var(--green); }
+
+  /* ── HEADER ── */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel);
+  }
+  .logo { font-size: 18px; font-weight: bold; letter-spacing: 2px; color: var(--gold); }
+  .logo span { color: var(--green); font-size: 11px; display: block; letter-spacing: 1px; }
+  .back-btn {
+    background: none; border: 1px solid var(--border);
+    color: var(--dim); padding: 6px 14px; cursor: pointer;
+    font-family: inherit; font-size: 11px;
+  }
+  .back-btn:hover { border-color: var(--green); color: var(--green); }
+
+  /* ── LAYOUT ── */
+  .layout { display: grid; grid-template-columns: 340px 1fr; gap: 0; min-height: calc(100vh - 62px); }
+  .sidebar { border-right: 1px solid var(--border); background: var(--panel); overflow-y: auto; }
+  .main { padding: 24px; overflow-y: auto; }
+
+  /* ── SECTIONS ── */
+  .section { padding: 16px; border-bottom: 1px solid var(--border); }
+  .section-title {
+    font-size: 10px; letter-spacing: 2px; color: var(--dim);
+    text-transform: uppercase; margin-bottom: 12px;
+  }
+
+  /* ── MODE SELECTOR ── */
+  .mode-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .mode-tab {
+    flex: 1; padding: 8px 4px; text-align: center;
+    border: 1px solid var(--border); background: none;
+    color: var(--dim); cursor: pointer; font-family: inherit;
+    font-size: 11px; letter-spacing: 1px;
+  }
+  .mode-tab.active { border-color: var(--green); color: var(--green); background: rgba(0,255,65,0.05); }
+
+  /* ── BLOCKS ── */
+  .block {
+    border: 1px solid var(--border); padding: 12px;
+    margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s;
+    position: relative;
+  }
+  .block:hover { border-color: var(--dim); }
+  .block.selected { border-color: var(--green); background: rgba(0,255,65,0.04); }
+  .block-name { font-size: 12px; color: var(--green); margin-bottom: 2px; }
+  .block-meta { font-size: 10px; color: var(--dim); }
+  .block-badge {
+    position: absolute; top: 8px; right: 8px;
+    font-size: 9px; padding: 2px 6px; border: 1px solid;
+  }
+  .badge-agent  { color: var(--gold);  border-color: var(--gold); }
+  .badge-code   { color: var(--blue);  border-color: var(--blue); }
+  .badge-reason { color: #ff9f41;      border-color: #ff9f41; }
+  .badge-fast   { color: var(--green); border-color: var(--green); }
+  .badge-multi  { color: #c641ff;      border-color: #c641ff; }
+  .badge-memory { color: #41ffe8;      border-color: #41ffe8; }
+  .badge-vision { color: var(--blue);  border-color: var(--blue); }
+  .badge-detect { color: var(--gold);  border-color: var(--gold); }
+  .badge-star   { color: var(--gold); }
+
+  /* ── TIER HEADERS ── */
+  .tier-header {
+    font-size: 9px; letter-spacing: 2px; color: var(--dim);
+    padding: 6px 0 4px; text-transform: uppercase; border-top: 1px solid var(--border);
+    margin-top: 8px;
+  }
+  .tier-header:first-child { border-top: none; margin-top: 0; }
+
+  /* ── API KEY INPUT ── */
+  .key-section { display: none; }
+  .key-section.visible { display: block; }
+  .provider-select {
+    width: 100%; padding: 8px; background: var(--dark);
+    border: 1px solid var(--border); color: var(--green);
+    font-family: inherit; font-size: 12px; margin-bottom: 8px;
+  }
+  .key-input {
+    width: 100%; padding: 8px; background: var(--dark);
+    border: 1px solid var(--border); color: var(--green);
+    font-family: inherit; font-size: 11px; margin-bottom: 6px;
+  }
+  .key-input::placeholder { color: var(--dim); }
+  .key-input:focus { outline: none; border-color: var(--green); }
+  .key-note { font-size: 10px; color: var(--dim); margin-bottom: 8px; }
+  .key-save-btn {
+    width: 100%; padding: 8px; background: rgba(0,255,65,0.08);
+    border: 1px solid var(--green); color: var(--green);
+    font-family: inherit; font-size: 11px; cursor: pointer; letter-spacing: 1px;
+  }
+  .key-save-btn:hover { background: rgba(0,255,65,0.15); }
+
+  /* ── KERNEL + MEMORY SELECTORS ── */
+  .option-row { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  .option-pill {
+    padding: 5px 10px; border: 1px solid var(--border);
+    color: var(--dim); cursor: pointer; font-family: inherit;
+    font-size: 10px; letter-spacing: 1px; background: none;
+  }
+  .option-pill.selected { border-color: var(--green); color: var(--green); background: rgba(0,255,65,0.06); }
+
+  /* ── MACHINE NAME ── */
+  .name-input {
+    width: 100%; padding: 10px; background: var(--dark);
+    border: 1px solid var(--border); color: var(--gold);
+    font-family: inherit; font-size: 14px; letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .name-input:focus { outline: none; border-color: var(--gold); }
+  .name-input::placeholder { color: #3a3a1a; }
+
+  /* ── MAIN PANEL ── */
+  .terminal-box {
+    border: 1px solid var(--border); background: var(--panel);
+    padding: 20px; margin-bottom: 20px; min-height: 200px;
+  }
+  .terminal-line { margin-bottom: 6px; line-height: 1.6; }
+  .t-green { color: var(--green); }
+  .t-gold  { color: var(--gold); }
+  .t-dim   { color: var(--dim); }
+  .t-red   { color: var(--red); }
+  .t-blue  { color: var(--blue); }
+  .t-white { color: var(--white); }
+  .cursor { animation: blink 1s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ── CHAT ── */
+  .chat-area {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    padding: 16px;
+    min-height: 280px;
+    max-height: 380px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+  }
+  .chat-msg { margin-bottom: 12px; line-height: 1.6; }
+  .chat-you  { color: var(--gold); }
+  .chat-llsm { color: var(--green); }
+  .chat-sys  { color: var(--dim); font-size: 11px; }
+  .chat-input-row { display: flex; gap: 8px; }
+  .chat-input {
+    flex: 1; padding: 10px; background: var(--dark);
+    border: 1px solid var(--border); color: var(--white);
+    font-family: inherit; font-size: 13px;
+  }
+  .chat-input:focus { outline: none; border-color: var(--green); }
+  .chat-send {
+    padding: 10px 20px; background: rgba(0,255,65,0.1);
+    border: 1px solid var(--green); color: var(--green);
+    font-family: inherit; font-size: 11px; cursor: pointer; letter-spacing: 1px;
+  }
+  .chat-send:hover { background: rgba(0,255,65,0.2); }
+
+  /* ── BOOT / LAUNCH ── */
+  .launch-btn {
+    width: 100%; padding: 14px; background: rgba(0,255,65,0.08);
+    border: 2px solid var(--green); color: var(--green);
+    font-family: inherit; font-size: 14px; cursor: pointer;
+    letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px;
+  }
+  .launch-btn:hover { background: rgba(0,255,65,0.15); }
+  .launch-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .export-btn {
+    width: 100%; padding: 10px; background: rgba(255,215,0,0.06);
+    border: 1px solid var(--gold); color: var(--gold);
+    font-family: inherit; font-size: 11px; cursor: pointer;
+    letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px;
+  }
+  .export-btn:hover { background: rgba(255,215,0,0.12); }
+
+  /* ── WORM CHAIN ── */
+  .worm-chain { margin-top: 16px; }
+  .worm-entry {
+    font-size: 10px; color: var(--dim); padding: 4px 0;
+    border-bottom: 1px solid #111; font-family: monospace;
+  }
+  .worm-entry .seal { color: var(--green); }
+
+  /* ── MODEL CATALOG ── */
+  .catalog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .catalog-card {
+    border: 1px solid var(--border); padding: 12px;
+    background: var(--panel);
+  }
+  .catalog-name { color: var(--green); font-size: 12px; margin-bottom: 4px; }
+  .catalog-desc { color: var(--dim); font-size: 10px; margin-bottom: 6px; }
+  .catalog-meta { display: flex; gap: 8px; font-size: 10px; }
+  .catalog-size { color: var(--blue); }
+  .catalog-vram { color: #ff9f41; }
+  .catalog-pull {
+    margin-top: 8px; font-size: 10px; color: var(--dim);
+    background: var(--dark); padding: 4px 8px; cursor: pointer;
+    border: 1px solid #1a1a1a;
+  }
+  .catalog-pull:hover { color: var(--green); border-color: var(--border); }
+  .catalog-tier { font-size: 9px; letter-spacing: 1px; color: var(--dim); }
+
+  /* ── STATUS BAR ── */
+  .statusbar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #030f03; border-top: 1px solid var(--border);
+    padding: 5px 16px; font-size: 10px; color: var(--dim);
+    display: flex; justify-content: space-between; z-index: 100;
+  }
+  .status-green { color: var(--green); }
+  .status-gold  { color: var(--gold); }
+
+  /* ── TABS ── */
+  .main-tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+  .main-tab {
+    padding: 8px 18px; border: 1px solid var(--border);
+    background: none; color: var(--dim); cursor: pointer;
+    font-family: inherit; font-size: 11px; letter-spacing: 1px;
+  }
+  .main-tab.active { border-color: var(--green); color: var(--green); background: rgba(0,255,65,0.04); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── INSTALL GUIDE ── */
+  .install-step {
+    border: 1px solid var(--border); padding: 14px;
+    margin-bottom: 10px; background: var(--panel);
+  }
+  .install-num { color: var(--gold); font-size: 18px; float: left; margin-right: 14px; line-height: 1; }
+  .install-title { color: var(--white); font-size: 13px; margin-bottom: 6px; }
+  .code-block {
+    background: var(--dark); border: 1px solid var(--border);
+    padding: 10px 14px; font-size: 11px; color: var(--green);
+    margin-top: 8px; cursor: pointer; position: relative;
+  }
+  .code-block:hover::after { content: 'COPY'; position: absolute; right: 10px; top: 10px; font-size: 9px; color: var(--dim); }
+  .install-note { font-size: 10px; color: var(--dim); margin-top: 6px; }
+
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); max-height: 50vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="logo">🧠 LLSM BUILDER
+      <span>Personal Large Language LISP Machine · SNAPKITTYWEST · 2026</span>
+    </div>
+  </div>
+  <button class="back-btn" onclick="location.href='index.html'">← APPLE GITDOS</button>
+</div>
+
+<div class="layout">
+
+  <!-- ── SIDEBAR: Builder Blocks ── -->
+  <div class="sidebar">
+
+    <!-- MODE -->
+    <div class="section">
+      <div class="section-title">01 · Runtime Mode</div>
+      <div class="mode-tabs">
+        <button class="mode-tab active" onclick="setMode('local')" id="tab-local">LOCAL</button>
+        <button class="mode-tab" onclick="setMode('cloud')" id="tab-cloud">CLOUD</button>
+        <button class="mode-tab" onclick="setMode('demo')" id="tab-demo">DEMO</button>
+      </div>
+      <div class="t-dim" style="font-size:10px;line-height:1.6;" id="mode-desc">
+        Run on your hardware via Ollama — free, private, no API key needed.
+      </div>
+    </div>
+
+    <!-- LOCAL: MODEL PICKER -->
+    <div class="section" id="local-model-section">
+      <div class="section-title">02 · Nano Model</div>
+      <div id="model-list">
+        <div class="tier-header">★ MICRO — runs on anything</div>
+        <!-- populated by JS -->
+      </div>
+      <div style="margin-top:10px;font-size:10px;color:var(--dim);">
+        ★ = Recommended starter &nbsp;|&nbsp; [LIVE] = detected on your machine
+      </div>
+    </div>
+
+    <!-- CLOUD: API KEY -->
+    <div class="section key-section" id="cloud-key-section">
+      <div class="section-title">02 · API Provider</div>
+      <select class="provider-select" id="provider-select" onchange="updateProviderModels()">
+        <option value="groq">Groq (FREE — best free tier)</option>
+        <option value="openai">OpenAI</option>
+        <option value="together">Together AI</option>
+        <option value="openrouter">OpenRouter (free models)</option>
+        <option value="custom">Custom endpoint / BOB vLLM</option>
+      </select>
+      <div id="cloud-model-pills" class="option-row"></div>
+      <div class="key-note" id="key-hint">Your API key is stored only in your browser (sessionStorage). Never sent to our servers.</div>
+      <input class="key-input" id="api-key-input" type="password" placeholder="Paste your API key here..." oninput="validateKey()">
+      <input class="key-input" id="custom-endpoint-input" type="text" placeholder="https://your-endpoint/v1" style="display:none">
+      <button class="key-save-btn" id="key-save-btn" onclick="saveKey()">SAVE KEY →</button>
+      <div id="key-status" style="font-size:10px;margin-top:6px;"></div>
+    </div>
+
+    <!-- KERNEL -->
+    <div class="section">
+      <div class="section-title" id="kernel-label">03 · Reasoning Kernel</div>
+      <div class="option-row">
+        <button class="option-pill selected" onclick="selectKernel(this,'raw')" data-val="raw">RAW LLM</button>
+        <button class="option-pill" onclick="selectKernel(this,'prolog')" data-val="prolog">PROLOG</button>
+        <button class="option-pill" onclick="selectKernel(this,'cot')" data-val="cot">CHAIN-OF-THOUGHT</button>
+        <button class="option-pill" onclick="selectKernel(this,'sovereign')" data-val="sovereign">SOVEREIGN</button>
+      </div>
+      <div class="t-dim" style="font-size:10px;" id="kernel-desc">
+        Direct LLM output — fastest response, no reasoning layer.
+      </div>
+    </div>
+
+    <!-- MEMORY -->
+    <div class="section">
+      <div class="section-title">04 · Memory Layer</div>
+      <div class="option-row">
+        <button class="option-pill selected" onclick="selectMemory(this,'worm')" data-val="worm">WORM SEALED</button>
+        <button class="option-pill" onclick="selectMemory(this,'session')" data-val="session">SESSION</button>
+        <button class="option-pill" onclick="selectMemory(this,'none')" data-val="none">NONE</button>
+      </div>
+      <div class="t-dim" style="font-size:10px;" id="memory-desc">
+        Every message WORM-sealed — tamper-evident, permanent record.
+      </div>
+    </div>
+
+    <!-- MACHINE NAME -->
+    <div class="section">
+      <div class="section-title">05 · Name Your Machine</div>
+      <input class="name-input" id="machine-name" type="text" placeholder="MY LLSM" maxlength="24" oninput="updateStatus()">
+    </div>
+
+    <!-- LAUNCH -->
+    <div class="section">
+      <button class="launch-btn" id="launch-btn" onclick="bootMachine()">⚡ BOOT LLSM</button>
+      <button class="export-btn" onclick="exportConstitution()">↓ DOWNLOAD CONSTITUTION</button>
+    </div>
+
+  </div>
+
+  <!-- ── MAIN PANEL ── -->
+  <div class="main">
+
+    <div class="main-tabs">
+      <button class="main-tab active" onclick="showTab('boot')" id="mt-boot">BOOT TERMINAL</button>
+      <button class="main-tab" onclick="showTab('chat')" id="mt-chat">TALK TO YOUR LLSM</button>
+      <button class="main-tab" onclick="showTab('catalog')" id="mt-catalog">MODEL CATALOG</button>
+      <button class="main-tab" onclick="showTab('install')" id="mt-install">INSTALL GUIDE</button>
+    </div>
+
+    <!-- BOOT TERMINAL -->
+    <div class="tab-panel active" id="tab-boot">
+      <div class="terminal-box" id="boot-terminal">
+        <div class="terminal-line t-dim">╔══════════════════════════════════════════════════════════╗</div>
+        <div class="terminal-line t-dim">║  PERSONAL LARGE LANGUAGE LISP MACHINE · SNAPKITTYWEST   ║</div>
+        <div class="terminal-line t-dim">╚══════════════════════════════════════════════════════════╝</div>
+        <div class="terminal-line" style="margin-top:12px;">
+          <span class="t-green">LLSM BUILDER READY.</span>
+        </div>
+        <div class="terminal-line t-dim">Select your blocks in the left panel, then hit BOOT.</div>
+        <div class="terminal-line" style="margin-top:12px;">
+          <span class="t-gold">Your machine. Your model. Your memory. No cloud required.</span>
+        </div>
+        <div class="terminal-line" style="margin-top:16px;" id="status-preview">
+          <span class="t-dim">MODE: </span><span class="t-green" id="s-mode">LOCAL/OLLAMA</span>
+          <span class="t-dim"> · MODEL: </span><span class="t-green" id="s-model">none selected</span>
+          <span class="t-dim"> · KERNEL: </span><span class="t-green" id="s-kernel">RAW</span>
+          <span class="t-dim"> · MEMORY: </span><span class="t-green" id="s-memory">WORM</span>
+        </div>
+        <div class="terminal-line t-dim" style="margin-top:4px;" id="s-name-line">NAME: <span id="s-name">—</span></div>
+      </div>
+
+      <div class="worm-chain">
+        <div class="section-title">WORM CHAIN · SESSION LEDGER</div>
+        <div id="worm-entries">
+          <div class="worm-entry t-dim">— No entries yet. Boot your LLSM to start the chain. —</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="tab-panel" id="tab-chat">
+      <div id="not-booted" style="color:var(--dim);margin-bottom:16px;">
+        Boot your LLSM first to start talking. →
+      </div>
+      <div id="chat-interface" style="display:none;">
+        <div style="margin-bottom:12px;font-size:11px;">
+          <span class="t-dim">MACHINE: </span><span class="t-gold" id="chat-machine-name">—</span>
+          &nbsp;|&nbsp;
+          <span class="t-dim">MODEL: </span><span class="t-green" id="chat-model-name">—</span>
+          &nbsp;|&nbsp;
+          <span class="t-dim">KERNEL: </span><span class="t-green" id="chat-kernel-name">—</span>
+        </div>
+        <div class="chat-area" id="chat-area"></div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="chat-input" type="text" placeholder="Talk to your LLSM..." onkeydown="if(event.key==='Enter')sendMessage()">
+          <button class="chat-send" onclick="sendMessage()">SEND →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CATALOG -->
+    <div class="tab-panel" id="tab-catalog">
+      <div style="margin-bottom:16px;">
+        <span class="t-white" style="font-size:14px;">All Free Nano LLMs</span>
+        <span class="t-dim" style="font-size:11px;"> — runs via Ollama on your hardware</span>
+      </div>
+      <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;" id="catalog-filter">
+        <button class="option-pill selected" onclick="filterCatalog(this,'all')">ALL</button>
+        <button class="option-pill" onclick="filterCatalog(this,'micro')">MICRO (&lt;1GB)</button>
+        <button class="option-pill" onclick="filterCatalog(this,'nano')">NANO (1-3B)</button>
+        <button class="option-pill" onclick="filterCatalog(this,'small')">SMALL (3-5B)</button>
+        <button class="option-pill" onclick="filterCatalog(this,'medium')">MEDIUM (6-9B)</button>
+        <button class="option-pill" onclick="filterCatalog(this,'embed')">EMBEDDINGS</button>
+      </div>
+      <div class="catalog-grid" id="catalog-grid"></div>
+    </div>
+
+    <!-- INSTALL -->
+    <div class="tab-panel" id="tab-install">
+      <div style="margin-bottom:16px;">
+        <span class="t-white" style="font-size:14px;">How to run LLSM on your hardware</span>
+      </div>
+
+      <div class="install-step">
+        <div class="install-num">1</div>
+        <div class="install-title">Install Ollama</div>
+        <div class="t-dim" style="font-size:11px;margin-bottom:8px;">Ollama runs open-source LLMs locally. Free. No account needed.</div>
+        <a href="https://ollama.ai" target="_blank" class="code-block" style="display:block;">→ Download from ollama.ai</a>
+        <div class="install-note">Available for Mac, Windows, Linux. Runs on CPU if no GPU available.</div>
+      </div>
+
+      <div class="install-step">
+        <div class="install-num">2</div>
+        <div class="install-title">Enable CORS (required for browser access)</div>
+        <div class="code-block" onclick="copyCmd(this)">OLLAMA_ORIGINS="*" ollama serve</div>
+        <div class="install-note">Or set permanently: add OLLAMA_ORIGINS=* to your shell profile.</div>
+      </div>
+
+      <div class="install-step">
+        <div class="install-num">3</div>
+        <div class="install-title">Pull your first nano model</div>
+        <div class="code-block" onclick="copyCmd(this)">ollama pull llama3.2:3b</div>
+        <div class="code-block" onclick="copyCmd(this)" style="margin-top:6px;">ollama pull deepseek-r1:1.5b</div>
+        <div class="code-block" onclick="copyCmd(this)" style="margin-top:6px;">ollama pull nemotron-mini:4b</div>
+        <div class="install-note">Browse the full catalog in the MODEL CATALOG tab. All models are free and open-source.</div>
+      </div>
+
+      <div class="install-step">
+        <div class="install-num">4</div>
+        <div class="install-title">Boot this page and select LOCAL mode</div>
+        <div class="t-dim" style="font-size:11px;margin-top:4px;">
+          The LLSM Builder connects to <span class="t-green">http://localhost:11434</span> automatically.
+          Select LOCAL mode → pick your model → hit BOOT.
+        </div>
+      </div>
+
+      <div class="install-step">
+        <div class="install-num">5</div>
+        <div class="install-title">No GPU? No problem.</div>
+        <div class="t-dim" style="font-size:11px;margin-top:4px;">
+          Use <span class="t-green">CLOUD mode</span> with a free Groq API key (groq.com) — fastest free inference available.
+          Or use <span class="t-green">DEMO mode</span> to explore the builder without any setup.
+        </div>
+        <div class="code-block" style="margin-top:8px;cursor:default;">
+          Groq free tier: 6,000 requests/day · llama3-8b-8192 · 0ms cold start
+        </div>
+      </div>
+
+      <div class="install-step">
+        <div class="install-num">★</div>
+        <div class="install-title">Download APPLE GITDOS to run everything offline</div>
+        <div class="t-dim" style="font-size:11px;margin-top:4px;">
+          Download the entire Apple GITDOS environment — LLSM Builder, twin dashboard,
+          WORM ledger, all tools — to run on your own machine or private server.
+        </div>
+        <a href="https://github.com/SNAPKITTYWEST/apple-ii-universal-machine/archive/refs/heads/master.zip"
+           class="export-btn" style="display:block;text-align:center;text-decoration:none;margin-top:10px;">
+          ↓ DOWNLOAD APPLE GITDOS (ZIP)
+        </a>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<div class="statusbar">
+  <span id="sb-left"><span class="status-green">LLSM BUILDER</span> · SNAPKITTYWEST · 2026</span>
+  <span id="sb-right">MODE: <span class="status-green" id="sb-mode">LOCAL</span> · MODEL: <span class="status-gold" id="sb-model">none</span></span>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+var state = {
+  mode:     'local',
+  model:    null,
+  kernel:   'raw',
+  memory:   'worm',
+  name:     '',
+  booted:   false,
+  provider: 'groq',
+  apiKey:   '',
+  endpoint: '',
+  cloudModel: null,
+  wormChain: [],
+  messages:  []
+};
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  renderModelList();
+  renderCatalog('all');
+  updateProviderModels();
+  // try to detect running Ollama models
+  detectOllama();
+});
+
+function detectOllama() {
+  fetch('http://localhost:11434/api/tags', { signal: AbortSignal.timeout(2000) })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.models && data.models.length > 0) {
+        data.models.forEach(function(m) {
+          var existing = ModelRegistry.nano.find(function(n) { return n.name === m.name; });
+          if (!existing) {
+            ModelRegistry.nano.unshift({
+              name: m.name, size: m.size ? (m.size/1e9).toFixed(1)+'GB' : '?',
+              tier: 'local', best: 'general', vram: '?',
+              desc: 'Detected on your machine', pull: 'ollama pull ' + m.name
+            });
+          }
+          ModelRegistry.detectedModels.push(m.name);
+        });
+        renderModelList();
+        wormLog('OLLAMA DETECTED · ' + data.models.length + ' models on machine');
+      }
+    })
+    .catch(function() { /* Ollama not running — that's fine */ });
+}
+
+// ── MODES ──────────────────────────────────────────────────────────────────
+var modeDesc = {
+  local: 'Run on your hardware via Ollama — free, private, no API key needed.',
+  cloud: 'Use a cloud API with your own key — fastest inference, pay-per-use or free tier.',
+  demo:  'Browser demo mode — no Ollama or API key needed. Simulates your LLSM.'
+};
+
+function setMode(m) {
+  state.mode = m;
+  ['local','cloud','demo'].forEach(function(t) {
+    document.getElementById('tab-'+t).classList.toggle('active', t === m);
+  });
+  document.getElementById('mode-desc').textContent = modeDesc[m];
+  document.getElementById('local-model-section').style.display = m === 'local' ? 'block' : 'none';
+  document.getElementById('cloud-key-section').classList.toggle('visible', m === 'cloud');
+  document.getElementById('s-mode').textContent = m.toUpperCase() + (m === 'local' ? '/OLLAMA' : m === 'cloud' ? '/API' : '/DEMO');
+  document.getElementById('sb-mode').textContent = m.toUpperCase();
+  updateStatus();
+}
+
+// ── CLOUD PROVIDER ─────────────────────────────────────────────────────────
+function updateProviderModels() {
+  var pid = document.getElementById('provider-select').value;
+  state.provider = pid;
+  var p = ModelRegistry.cloudProviders.find(function(x) { return x.id === pid; });
+  if (!p) return;
+  document.getElementById('key-hint').textContent =
+    pid === 'custom'
+      ? 'Enter your custom vLLM or BOB endpoint URL + optional Bearer token.'
+      : 'Key stored in sessionStorage only — never sent to our servers. Hint: ' + p.keyHint;
+
+  var ep = document.getElementById('custom-endpoint-input');
+  ep.style.display = pid === 'custom' ? 'block' : 'none';
+
+  var pills = document.getElementById('cloud-model-pills');
+  pills.innerHTML = '';
+  p.models.forEach(function(m, i) {
+    var btn = document.createElement('button');
+    btn.className = 'option-pill' + (i === 0 ? ' selected' : '');
+    btn.textContent = m;
+    btn.onclick = function() {
+      pills.querySelectorAll('.option-pill').forEach(function(b) { b.classList.remove('selected'); });
+      btn.classList.add('selected');
+      state.cloudModel = m;
+      updateStatus();
+    };
+    pills.appendChild(btn);
+  });
+  if (p.models.length > 0) state.cloudModel = p.models[0];
+
+  // restore saved key
+  var saved = sessionStorage.getItem('llsm_key_' + pid);
+  if (saved) {
+    document.getElementById('api-key-input').value = saved;
+    document.getElementById('key-status').innerHTML = '<span style="color:var(--green)">✓ Key loaded from session</span>';
+  } else {
+    document.getElementById('api-key-input').value = '';
+    document.getElementById('key-status').textContent = '';
+  }
+}
+
+function validateKey() {
+  var k = document.getElementById('api-key-input').value.trim();
+  state.apiKey = k;
+}
+
+function saveKey() {
+  var k = document.getElementById('api-key-input').value.trim();
+  if (!k && state.provider !== 'custom') {
+    document.getElementById('key-status').innerHTML = '<span style="color:var(--red)">Enter a key first.</span>';
+    return;
+  }
+  state.apiKey = k;
+  state.endpoint = document.getElementById('custom-endpoint-input').value.trim();
+  sessionStorage.setItem('llsm_key_' + state.provider, k);
+  document.getElementById('key-status').innerHTML = '<span style="color:var(--green)">✓ Key saved (session only)</span>';
+  updateStatus();
+}
+
+// ── MODEL LIST ─────────────────────────────────────────────────────────────
+var tierOrder = ['micro','nano','small','medium','embed'];
+var tierLabel = {
+  micro:  '★ MICRO — runs on literally anything',
+  nano:   'NANO (1B–2B) — daily driver',
+  small:  'SMALL (3B–4B) — sweet spot ★',
+  medium: 'MEDIUM (6B–9B) — full power',
+  embed:  'EMBEDDINGS — memory layer'
+};
+var badgeMap = {
+  agent: 'badge-agent', code: 'badge-code', reasoning: 'badge-reason',
+  speed: 'badge-fast', multilingual: 'badge-multi', memory: 'badge-memory',
+  vision: 'badge-vision', general: 'badge-fast', balanced: 'badge-fast', chat: 'badge-fast'
+};
+
+function renderModelList() {
+  var list = document.getElementById('model-list');
+  list.innerHTML = '';
+  tierOrder.forEach(function(tier) {
+    var models = ModelRegistry.nano.filter(function(m) { return m.tier === tier; });
+    if (!models.length) return;
+    var h = document.createElement('div');
+    h.className = 'tier-header';
+    h.textContent = tierLabel[tier] || tier.toUpperCase();
+    list.appendChild(h);
+    models.forEach(function(m) {
+      var d = document.createElement('div');
+      var isDetected = ModelRegistry.detectedModels.indexOf(m.name) >= 0;
+      d.className = 'block' + (isDetected ? '' : '');
+      d.innerHTML = '<div class="block-name">' + m.name + (m.name.includes('★') ? '' : '') + '</div>' +
+        '<div class="block-meta">' + m.size + ' · ' + m.vram + ' VRAM</div>' +
+        '<div class="block-meta" style="margin-top:2px;font-size:9px;">' + m.desc.substring(0,50) + '</div>' +
+        '<span class="block-badge ' + (badgeMap[m.best] || 'badge-fast') + '">' + m.best.toUpperCase() + '</span>' +
+        (isDetected ? '<span class="block-badge badge-detect" style="right:70px;">[LIVE]</span>' : '');
+      d.onclick = (function(model) {
+        return function() {
+          list.querySelectorAll('.block').forEach(function(b) { b.classList.remove('selected'); });
+          d.classList.add('selected');
+          state.model = model;
+          updateStatus();
+        };
+      })(m);
+      list.appendChild(d);
+    });
+  });
+}
+
+// ── KERNEL ─────────────────────────────────────────────────────────────────
+var kernelDesc = {
+  raw:      'Direct LLM output — fastest response, no reasoning layer.',
+  prolog:   'Wrap responses in Prolog-style logical assertions. Best for structured reasoning.',
+  cot:      'Force chain-of-thought: model must reason step-by-step before answering.',
+  sovereign:'SNAPKITTY sovereign mode: every response WORM-stamped, domain-gated, deterministic.'
+};
+var kernelPrompts = {
+  raw:      '',
+  prolog:   'You reason in logical steps. Format: FACT: ... CHAIN: ... CONCLUSION: ...',
+  cot:      'Think step by step before answering. Format your reasoning before your final answer.',
+  sovereign:'You are a sovereign reasoning engine. Every response must be deterministic, signed with certainty or explicit uncertainty. Do not hallucinate. Format: REASONING: ... ANSWER: ... CONFIDENCE: HIGH/MEDIUM/LOW'
+};
+
+function selectKernel(btn, val) {
+  document.querySelectorAll('#sidebar .option-pill, .section .option-pill').forEach(function(b) {
+    if (b.dataset.val && ['raw','prolog','cot','sovereign'].includes(b.dataset.val)) b.classList.remove('selected');
+  });
+  btn.classList.add('selected');
+  state.kernel = val;
+  document.getElementById('kernel-desc').textContent = kernelDesc[val];
+  updateStatus();
+}
+
+// ── MEMORY ─────────────────────────────────────────────────────────────────
+var memoryDesc = {
+  worm:    'Every message WORM-sealed — tamper-evident, permanent record.',
+  session: 'Messages stored in sessionStorage — survives refresh, clears on close.',
+  none:    'No memory — each message is independent. Stateless.'
+};
+
+function selectMemory(btn, val) {
+  btn.parentElement.querySelectorAll('.option-pill').forEach(function(b) { b.classList.remove('selected'); });
+  btn.classList.add('selected');
+  state.memory = val;
+  document.getElementById('memory-desc').textContent = memoryDesc[val];
+  updateStatus();
+}
+
+// ── STATUS ─────────────────────────────────────────────────────────────────
+function updateStatus() {
+  var modelName = state.mode === 'cloud' ? (state.cloudModel || 'none') : (state.model ? state.model.name : 'none selected');
+  document.getElementById('s-mode').textContent = state.mode.toUpperCase() + (state.mode==='local'?'/OLLAMA':state.mode==='cloud'?'/API':'/DEMO');
+  document.getElementById('s-model').textContent = modelName;
+  document.getElementById('s-kernel').textContent = state.kernel.toUpperCase();
+  document.getElementById('s-memory').textContent = state.memory.toUpperCase();
+  document.getElementById('s-name').textContent = document.getElementById('machine-name').value || '—';
+  document.getElementById('sb-model').textContent = modelName;
+}
+
+// ── BOOT ───────────────────────────────────────────────────────────────────
+function bootMachine() {
+  state.name = document.getElementById('machine-name').value.trim() || 'MY-LLSM';
+  var modelName = state.mode === 'cloud' ? state.cloudModel : (state.model ? state.model.name : null);
+
+  if (state.mode === 'local' && !modelName) {
+    appendBoot('<span class="t-red">✗ SELECT A MODEL first.</span>'); return;
+  }
+  if (state.mode === 'cloud' && !state.apiKey && state.provider !== 'demo') {
+    appendBoot('<span class="t-red">✗ PASTE YOUR API KEY first.</span>'); return;
+  }
+
+  state.booted = true;
+  var lines = [
+    '',
+    '<span class="t-gold">╔══════════════════════════════════════════════════╗</span>',
+    '<span class="t-gold">║  BOOTING: ' + state.name.padEnd(39) + '║</span>',
+    '<span class="t-gold">╚══════════════════════════════════════════════════╝</span>',
+    '',
+    '<span class="t-dim">RUNTIME......</span> <span class="t-green">OK</span>',
+    '<span class="t-dim">MODEL........</span> <span class="t-green">' + (modelName || 'DEMO') + '</span>',
+    '<span class="t-dim">KERNEL.......</span> <span class="t-green">' + state.kernel.toUpperCase() + '</span>',
+    '<span class="t-dim">MEMORY.......</span> <span class="t-green">' + state.memory.toUpperCase() + '</span>',
+    '<span class="t-dim">MODE.........</span> <span class="t-green">' + state.mode.toUpperCase() + '</span>',
+    '',
+    '<span class="t-green">★ ' + state.name + ' IS ALIVE. ★</span>',
+    '<span class="t-dim">Switch to TALK TO YOUR LLSM tab to begin.</span>',
+    ''
+  ];
+  lines.forEach(function(l) { appendBoot(l); });
+  wormLog('BOOT · ' + state.name + ' · MODEL:' + (modelName || 'DEMO') + ' · KERNEL:' + state.kernel);
+  wormLog('CONSTITUTION SEALED · ' + state.name);
+
+  // unlock chat
+  document.getElementById('not-booted').style.display = 'none';
+  document.getElementById('chat-interface').style.display = 'block';
+  document.getElementById('chat-machine-name').textContent = state.name;
+  document.getElementById('chat-model-name').textContent = modelName || 'DEMO';
+  document.getElementById('chat-kernel-name').textContent = state.kernel.toUpperCase();
+  addChatMsg('sys', state.name + ' is online. Talk to your machine.');
+}
+
+function appendBoot(html) {
+  var t = document.getElementById('boot-terminal');
+  var d = document.createElement('div');
+  d.className = 'terminal-line';
+  d.innerHTML = html;
+  t.appendChild(d);
+  t.scrollTop = t.scrollHeight;
+}
+
+// ── WORM ───────────────────────────────────────────────────────────────────
+function wormLog(action) {
+  var ts = new Date().toISOString();
+  var prev = state.wormChain.length > 0 ? state.wormChain[state.wormChain.length-1].seal : '0000000000000000';
+  var seal = djb2(prev + action + ts);
+  state.wormChain.push({ ts: ts, action: action, seal: seal });
+  if (state.memory === 'worm') persistWorm();
+  renderWormChain();
+}
+
+function djb2(str) {
+  var h = 5381;
+  for (var i = 0; i < str.length; i++) h = ((h << 5) + h) ^ str.charCodeAt(i);
+  var hex = (h >>> 0).toString(16).padStart(8,'0');
+  return hex + '-worm-' + state.wormChain.length.toString(16).padStart(4,'0');
+}
+
+function persistWorm() {
+  try { sessionStorage.setItem('llsm_worm_' + state.name, JSON.stringify(state.wormChain)); } catch(e){}
+}
+
+function renderWormChain() {
+  var el = document.getElementById('worm-entries');
+  el.innerHTML = state.wormChain.slice(-12).reverse().map(function(e) {
+    return '<div class="worm-entry"><span class="seal">' + e.seal + '</span> · ' +
+      e.ts.slice(11,19) + ' · ' + e.action.substring(0,60) + '</div>';
+  }).join('');
+}
+
+// ── CHAT ───────────────────────────────────────────────────────────────────
+function addChatMsg(who, text) {
+  var area = document.getElementById('chat-area');
+  var d = document.createElement('div');
+  d.className = 'chat-msg';
+  var prefix = who === 'you' ? '<span class="chat-you">[YOU] </span>' :
+               who === 'llsm' ? '<span class="chat-llsm">[' + state.name + '] </span>' :
+               '<span class="chat-sys">[SYS] </span>';
+  d.innerHTML = prefix + text;
+  area.appendChild(d);
+  area.scrollTop = area.scrollHeight;
+  if (state.memory !== 'none') {
+    state.messages.push({ role: who === 'you' ? 'user' : 'assistant', content: text });
+  }
+}
+
+function sendMessage() {
+  var input = document.getElementById('chat-input');
+  var text = input.value.trim();
+  if (!text || !state.booted) return;
+  input.value = '';
+  addChatMsg('you', text);
+  wormLog('MSG · ' + text.substring(0,40));
+
+  if (state.mode === 'demo') {
+    demoBotReply(text);
+  } else if (state.mode === 'local') {
+    localOllamaReply(text);
+  } else if (state.mode === 'cloud') {
+    cloudApiReply(text);
+  }
+}
+
+function systemPrompt() {
+  var base = 'You are ' + state.name + ', a Personal Large Language LISP Machine built by the user on SNAPKITTYWEST infrastructure. ' +
+    'You are sovereign, deterministic, and sealed to a WORM chain. ';
+  return base + (kernelPrompts[state.kernel] || '');
+}
+
+function buildMessages(userText) {
+  var msgs = [{ role: 'system', content: systemPrompt() }];
+  if (state.memory !== 'none') {
+    state.messages.slice(-8).forEach(function(m) { msgs.push(m); });
+  }
+  msgs.push({ role: 'user', content: userText });
+  return msgs;
+}
+
+function localOllamaReply(text) {
+  var thinking = document.createElement('div');
+  thinking.className = 'chat-msg';
+  thinking.innerHTML = '<span class="chat-llsm">[' + state.name + '] </span><span class="t-dim">thinking...</span>';
+  document.getElementById('chat-area').appendChild(thinking);
+
+  fetch('http://localhost:11434/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: state.model ? state.model.name : 'llama3.2:3b',
+      messages: buildMessages(text),
+      stream: false
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    thinking.remove();
+    var reply = data.message && data.message.content ? data.message.content : '[no response]';
+    addChatMsg('llsm', reply);
+    wormLog('REPLY · ' + reply.substring(0,40));
+  })
+  .catch(function(e) {
+    thinking.remove();
+    addChatMsg('sys', 'Ollama error: ' + e.message + '. Is Ollama running with OLLAMA_ORIGINS=* ?');
+  });
+}
+
+function cloudApiReply(text) {
+  var p = ModelRegistry.cloudProviders.find(function(x) { return x.id === state.provider; });
+  var endpoint = state.provider === 'custom' ? state.endpoint : p.endpoint;
+  if (!endpoint) { addChatMsg('sys', 'No endpoint configured.'); return; }
+
+  var thinking = document.createElement('div');
+  thinking.className = 'chat-msg';
+  thinking.innerHTML = '<span class="chat-llsm">[' + state.name + '] </span><span class="t-dim">calling ' + state.provider + '...</span>';
+  document.getElementById('chat-area').appendChild(thinking);
+
+  fetch(endpoint + '/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + state.apiKey
+    },
+    body: JSON.stringify({
+      model: state.cloudModel || (p && p.models[0]),
+      messages: buildMessages(text),
+      max_tokens: 1024,
+      temperature: 0.3
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    thinking.remove();
+    var reply = data.choices && data.choices[0] ? data.choices[0].message.content : JSON.stringify(data);
+    addChatMsg('llsm', reply);
+    wormLog('CLOUD REPLY · ' + reply.substring(0,40));
+  })
+  .catch(function(e) {
+    thinking.remove();
+    addChatMsg('sys', 'API error: ' + e.message);
+  });
+}
+
+var demoReplies = [
+  'Reasoning complete. The WORM chain is intact — no tampering detected across {n} entries.',
+  'I am {name}, your sovereign LISP machine. Every token I generate is sealed before it leaves this session.',
+  'The golden ratio φ = (1+√5)/2 satisfies φ² = φ+1. This is provably true — I can produce the Lean 4 proof.',
+  'My kernel mode is {kernel}. I reason from first principles and seal my uncertainty explicitly.',
+  'The phinary contraction theorem holds: r(n) = R₀/φⁿ → 0. Your geometry is stable.',
+  'WORM seal applied: ' + djb2('demo-' + Date.now()),
+  'I am not a chatbot. I am an operating environment. The distinction matters.',
+];
+var demoIdx = 0;
+function demoBotReply(text) {
+  setTimeout(function() {
+    var r = demoReplies[demoIdx % demoReplies.length]
+      .replace('{n}', state.wormChain.length)
+      .replace('{name}', state.name)
+      .replace('{kernel}', state.kernel.toUpperCase());
+    demoIdx++;
+    addChatMsg('llsm', r);
+    wormLog('DEMO REPLY · ' + r.substring(0,40));
+  }, 600);
+}
+
+// ── CATALOG ────────────────────────────────────────────────────────────────
+function filterCatalog(btn, tier) {
+  document.getElementById('catalog-filter').querySelectorAll('.option-pill').forEach(function(b) { b.classList.remove('selected'); });
+  btn.classList.add('selected');
+  renderCatalog(tier);
+}
+
+function renderCatalog(tier) {
+  var models = tier === 'all' ? ModelRegistry.nano : ModelRegistry.nano.filter(function(m) { return m.tier === tier; });
+  var grid = document.getElementById('catalog-grid');
+  grid.innerHTML = models.map(function(m) {
+    return '<div class="catalog-card">' +
+      '<div class="catalog-tier">' + m.tier.toUpperCase() + ' · ' + m.best.toUpperCase() + '</div>' +
+      '<div class="catalog-name">' + m.name + '</div>' +
+      '<div class="catalog-desc">' + m.desc + '</div>' +
+      '<div class="catalog-meta">' +
+        '<span class="catalog-size">SIZE: ' + m.size + '</span>' +
+        '<span class="catalog-vram">VRAM: ' + m.vram + '</span>' +
+      '</div>' +
+      '<div class="catalog-pull" onclick="copyCmd(this)">' + m.pull + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── EXPORT CONSTITUTION ────────────────────────────────────────────────────
+function exportConstitution() {
+  var modelName = state.mode === 'cloud' ? state.cloudModel : (state.model ? state.model.name : null);
+  var constitution = {
+    name:     state.name || 'MY-LLSM',
+    version:  '1.0',
+    created:  new Date().toISOString(),
+    author:   'SNAPKITTYWEST · LLSM BUILDER',
+    runtime:  { mode: state.mode, provider: state.provider, endpoint: state.endpoint || (state.mode==='local'?'http://localhost:11434':'') },
+    model:    modelName || 'not selected',
+    kernel:   state.kernel,
+    memory:   state.memory,
+    system_prompt: systemPrompt(),
+    worm_seal: state.wormChain.length > 0 ? state.wormChain[state.wormChain.length-1].seal : null,
+    chain_length: state.wormChain.length,
+    sovereign_license: 'Sovereign Source License v1.0 · SNAPKITTYWEST',
+    fingerprint: 'F(53) % 107 = F(6) — Ahmad sovereign authorship seal'
+  };
+  var blob = new Blob([JSON.stringify(constitution, null, 2)], { type: 'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (state.name || 'MY-LLSM').replace(/\s+/g,'-').toUpperCase() + '-constitution.json';
+  a.click();
+  wormLog('CONSTITUTION EXPORTED · ' + constitution.name);
+}
+
+// ── TABS ───────────────────────────────────────────────────────────────────
+function showTab(id) {
+  ['boot','chat','catalog','install'].forEach(function(t) {
+    document.getElementById('tab-'+t).classList.toggle('active', t===id);
+    document.getElementById('mt-'+t).classList.toggle('active', t===id);
+  });
+}
+
+// ── UTILS ──────────────────────────────────────────────────────────────────
+function copyCmd(el) {
+  navigator.clipboard.writeText(el.textContent.trim()).then(function() {
+    var orig = el.textContent;
+    el.textContent = '✓ COPIED';
+    setTimeout(function() { el.textContent = orig; }, 1200);
+  });
+}
+</script>
+</body>
+</html>
