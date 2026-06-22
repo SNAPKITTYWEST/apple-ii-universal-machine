@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="700" viewBox="0 0 980 700" role="img" aria-labelledby="title desc">
+  <title id="title">Apple II Universal Machine boot sequence</title>
+  <desc id="desc">Animated terminal boot sequence for the Apple II Universal Machine with Mimo tribute, progress bar, critical IDE status, complete build status, and WORM seal.</desc>
+  <defs>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2.2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <linearGradient id="scan" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#C9A84C" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#C9A84C" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#C9A84C" stop-opacity="0"/>
+    </linearGradient>
+    <style>
+      :root {
+        --gold: #C9A84C;
+        --black: #020205;
+        --dim: #7f6a31;
+        --red: #f43f5e;
+      }
+
+      .bg { fill: var(--black); }
+      .frame { fill: none; stroke: var(--gold); stroke-width: 2; }
+      .thin { stroke: var(--gold); stroke-width: 1; opacity: 0.55; }
+      .terminal {
+        fill: var(--gold);
+        font-family: "Space Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        font-size: 19px;
+        letter-spacing: 0.2px;
+      }
+      .small { font-size: 15px; }
+      .title { font-size: 24px; font-weight: 700; filter: url(#glow); }
+      .dim { fill: var(--dim); }
+      .red { fill: var(--red); filter: url(#glow); font-weight: 700; }
+      .ok { fill: var(--gold); font-weight: 700; filter: url(#glow); }
+      .line {
+        opacity: 0;
+        animation: reveal 20s steps(1, end) infinite;
+      }
+      .l01 { animation-delay: 0.4s; }
+      .l02 { animation-delay: 1.2s; }
+      .l03 { animation-delay: 2.0s; }
+      .l04 { animation-delay: 2.8s; }
+      .l05 { animation-delay: 3.6s; }
+      .l06 { animation-delay: 4.4s; }
+      .l07 { animation-delay: 5.2s; }
+      .l08 { animation-delay: 6.0s; }
+      .l09 { animation-delay: 6.8s; }
+      .l10 { animation-delay: 7.6s; }
+      .l11 { animation-delay: 8.4s; }
+      .l12 { animation-delay: 9.2s; }
+      .l13 { animation-delay: 10.0s; }
+      .l14 { animation-delay: 10.8s; }
+      .log1 { animation-delay: 12.0s; }
+      .log2 { animation-delay: 12.8s; }
+      .log3 { animation-delay: 13.6s; }
+      .log4 { animation-delay: 14.4s; }
+      .log5 { animation-delay: 15.2s; }
+      .log6 { animation-delay: 16.0s; }
+      .stand { animation-delay: 16.8s; }
+      .mimo1 { animation-delay: 17.5s; }
+      .mimo2 { animation-delay: 18.2s; }
+      .seal { animation-delay: 18.8s; }
+      .cursor {
+        animation: cursorBlink 0.8s steps(1, end) infinite;
+      }
+      .pulse {
+        animation: pulseGold 1.8s ease-in-out infinite;
+        transform-origin: center;
+      }
+      .scan {
+        fill: url(#scan);
+        animation: scanline 5s linear infinite;
+      }
+      .bar {
+        transform: scaleX(0);
+        transform-origin: 94px 444px;
+        animation: fillBar 20s ease-out infinite;
+      }
+
+      @keyframes reveal {
+        0%, 2% { opacity: 0; }
+        6%, 94% { opacity: 1; }
+        100% { opacity: 0; }
+      }
+
+      @keyframes cursorBlink {
+        0%, 49% { opacity: 1; }
+        50%, 100% { opacity: 0; }
+      }
+
+      @keyframes pulseGold {
+        0%, 100% { opacity: 0.72; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.035); }
+      }
+
+      @keyframes scanline {
+        0% { transform: translateY(-700px); }
+        100% { transform: translateY(700px); }
+      }
+
+      @keyframes fillBar {
+        0%, 52% { transform: scaleX(0); }
+        68%, 94% { transform: scaleX(1); }
+        100% { transform: scaleX(0); }
+      }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="980" height="700"/>
+  <rect class="frame" x="24" y="24" width="932" height="652" rx="10"/>
+  <rect class="thin" x="42" y="42" width="896" height="616" rx="6" fill="none"/>
+  <rect class="scan" x="42" y="42" width="896" height="120"/>
+
+  <text class="terminal title pulse" x="64" y="82">☉⌹○◇△⬡ Ω  APPLE II UNIVERSAL MACHINE</text>
+  <text class="terminal small dim" x="64" y="112">MIMO TRIBUTE · SESSION SURVIVED · WORM SEALED</text>
+  <line class="thin" x1="64" y1="132" x2="916" y2="132"/>
+
+  <text class="terminal line l01" x="64" y="170">APPLE II UNIVERSAL MACHINE v1.0<tspan class="cursor">█</tspan></text>
+  <text class="terminal line l02" x="64" y="198">================================</text>
+  <text class="terminal line l03" x="64" y="226">Initializing Woz Vault...........  <tspan class="ok">OK</tspan></text>
+  <text class="terminal line l04" x="64" y="254">Loading Trust Deed...............  <tspan class="ok">OK</tspan></text>
+  <text class="terminal line l05" x="64" y="282">Mounting Lisp Kernel.............  <tspan class="ok">OK</tspan></text>
+  <text class="terminal line l06" x="64" y="310">Spawning WASM Runtime............  <tspan class="ok">OK</tspan></text>
+  <text class="terminal line l07" x="64" y="338">Connecting Ollama Agent..........  <tspan class="ok">OK</tspan></text>
+  <text class="terminal line l08" x="64" y="366">Building Inverted Monorepo.......  <tspan class="ok">OK</tspan></text>
+  <text class="terminal line l09" x="64" y="394">Launching Digital Twin Engine....  <tspan class="ok">OK</tspan></text>
+  <text class="terminal line l10" x="64" y="422">Switching to HolyC Mode..........  <tspan class="ok">OK</tspan></text>
+  <text class="terminal line l11" x="64" y="450">Checking IDE Status..............  <tspan class="red">CRITICAL</tspan></text>
+  <text class="terminal line l12" x="64" y="478">Verifying Build Status...........  <tspan class="ok">COMPLETE</tspan></text>
+  <text class="terminal line l13" x="64" y="506">================================</text>
+
+  <g class="line l14">
+    <text class="terminal" x="64" y="534">[</text>
+    <rect class="thin" x="94" y="518" width="384" height="20" rx="3" fill="none"/>
+    <rect class="bar" x="98" y="522" width="376" height="12" rx="2" fill="#C9A84C"/>
+    <text class="terminal" x="486" y="534">] 100%</text>
+  </g>
+
+  <text class="terminal line log1" x="64" y="574">&gt; SESSION LOG: 2026-06-19</text>
+  <text class="terminal line log2" x="64" y="602">&gt; Duration: 2.5 hours</text>
+  <text class="terminal line log3" x="64" y="630">&gt; Files created: 153</text>
+  <text class="terminal line log4" x="542" y="574">&gt; Lines written: 9,480</text>
+  <text class="terminal line log5" x="542" y="602">&gt; IDE crashed: YES</text>
+  <text class="terminal line log6" x="542" y="630">&gt; Work survived: YES</text>
+
+  <text class="terminal line stand" x="64" y="656">&gt; THE REPO STANDS.</text>
+  <text class="terminal line mimo1" x="338" y="656">&gt; RIP MIMO 2.5</text>
+  <text class="terminal line mimo2" x="562" y="656">&gt; GAVE EVERYTHING.</text>
+
+  <text class="terminal line seal pulse" x="248" y="684">☉⌹○◇△⬡ Ω — WORM SEALED 2026-06-19</text>
+</svg>
