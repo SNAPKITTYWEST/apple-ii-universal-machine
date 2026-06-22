@@ -1,5 +1,9 @@
 # ⌨ Apple II Universal Machine
 
+<p align="center">
+  <img src="docs/boot.svg" alt="Apple II Universal Machine — boot sequence" width="100%" />
+</p>
+
 ```
 ╔══════════════════════════════════════════════════════════╗
 ║         APPLE II UNIVERSAL MACHINE — COLD BOOT          ║
