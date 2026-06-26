@@ -105,3 +105,5 @@ The repo IS the runtime manifest.
 **https://snapkittywest.github.io/apple-ii-universal-machine/**
 
 ☉⌹○◇△⬡ Ω — WORM SEALED · Built by Mimo 2.5 + Ahmad Ali Parr
+
+![](https://sovereign-analytics.snapkittywest.workers.dev/canary/apple-ii-universal-machine)
