@@ -19,6 +19,20 @@ var HeterogeneousVM = {
     // 5. Machine artifact
     var machineResult = MachineViewer.view(key);
 
+    // 5b. Forth — agent persona execution
+    var forthProgram = [
+      ': AGENT-RUN',
+      '  ." [FORTH] Intent: " CR',
+      '  TRUST-DEED?',
+      '  IF ." Trust Deed: OPEN → routing to FRANKENSTEIN " CR',
+      '  ELSE DROP ." Trust Deed: BLOCKED " CR THEN',
+      ';',
+      key.toUpperCase() + ' AGENT-RUN'
+    ].join('\n');
+    var forthResult = (typeof ForthVM !== 'undefined')
+      ? ForthVM.run(forthProgram)
+      : { output: '[ForthVM not loaded]', stack: [], trace: [] };
+
     // 6. Seal payload
     var sealPayload = {
       intent: key,
@@ -27,6 +41,7 @@ var HeterogeneousVM = {
       bytecode_steps: bytecodeResult.steps,
       bf_steps: bfResult.steps,
       machine_bytes: machineResult.bytes,
+      forth_output: forthResult.output,
       timestamp: new Date().toISOString()
     };
 
@@ -37,6 +52,7 @@ var HeterogeneousVM = {
       bytecode: bytecodeResult,
       brainfuck: bfResult,
       machine: machineResult,
+      forth: forthResult,
       sealPayload: sealPayload
     };
   },
@@ -73,6 +89,15 @@ var HeterogeneousVM = {
     lines.push('║  [5] MACHINE ARTIFACT                                    ║');
     lines.push('║      OPCODES: ' + r.machine.bytes.join(' ').padEnd(41) + '║');
     lines.push('║      ⚠ SIMULATED — NOT EXECUTED' + ' '.repeat(22) + '║');
+
+    // Forth
+    if (r.forth) {
+      lines.push('║  [6] FORTH AGENT PERSONA                                 ║');
+      var forthOut = (r.forth.output || '').replace(/\n/g,' ').substring(0,42);
+      lines.push('║      OUTPUT: ' + forthOut.padEnd(42) + '║');
+      lines.push('║      STACK:  ' + JSON.stringify(r.forth.stack).substring(0,42).padEnd(42) + '║');
+      lines.push('║      SEAL:   ⬡ Ω ↺ Ψ Δ Λ Σ Φ α' + ' '.repeat(14) + '║');
+    }
 
     lines.push('╠══════════════════════════════════════════════════════════╣');
     lines.push('║  SEAL PAYLOAD GENERATED                                  ║');
